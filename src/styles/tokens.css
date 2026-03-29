@@ -1,0 +1,136 @@
+/* ==========================================================
+   NMDS Design Tokens — "The Refined Advocate"
+   Derived from Stitch reference, refined for production.
+   ========================================================== */
+
+:root {
+  /* ── Surface Hierarchy ── */
+  --surface-base:             #0E0E0E;
+  --surface-dim:              #0E0E0E;
+  --surface-container-lowest: #080808;
+  --surface-container-low:    #131313;
+  --surface-container:        #191A1A;
+  --surface-container-high:   #1F2020;
+  --surface-container-highest:#252626;
+  --surface-bright:           #2B2C2C;
+  --surface-variant:          #252626;
+
+  /* ── Primary Palette (Muted Steel Blue) ── */
+  --primary:                  #B9C8DE;
+  --primary-dim:              #ABB9CF;
+  --primary-container:        #39485A;
+  --on-primary:               #334153;
+  --on-primary-container:     #C2D2E8;
+
+  /* ── Secondary Palette ── */
+  --secondary:                #909FB6;
+  --secondary-container:      #2E3C50;
+  --on-secondary:             #122133;
+  --on-secondary-container:   #B2C0D9;
+
+  /* ── Tertiary ── */
+  --tertiary:                 #F0F3FF;
+  --tertiary-container:       #DAE6FE;
+  --on-tertiary:              #515C70;
+
+  /* ── Error / Status ── */
+  --error:                    #EE7D77;
+  --error-container:          #7F2927;
+  --on-error:                 #490106;
+  --on-error-container:       #FF9993;
+
+  /* ── Semantic Colors ── */
+  --success:                  #7DC8A0;
+  --success-container:        #1A3D2A;
+  --on-success:               #0D2818;
+  --warning:                  #D4A94E;
+  --warning-container:        #4A3B1A;
+  --on-warning:               #2D220A;
+  --info:                     #7DB0D4;
+  --info-container:           #1A3142;
+
+  /* ── Text / Surface Content ── */
+  --on-surface:               #E7E5E5;
+  --on-surface-variant:       #ACABAA;
+  --on-background:            #E7E5E5;
+  --inverse-surface:          #FCF9F8;
+  --inverse-on-surface:       #565555;
+  --inverse-primary:          #526073;
+
+  /* ── Borders (Ghost borders only) ── */
+  --outline:                  #767575;
+  --outline-variant:          #484848;
+  --outline-ghost:            rgba(72, 72, 72, 0.20);
+
+  /* ── Surface Tint ── */
+  --surface-tint:             #B9C8DE;
+
+  /* ── Typography ── */
+  --font-family:              'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs:             0.6875rem;   /* 11px – labels */
+  --font-size-sm:             0.75rem;     /* 12px */
+  --font-size-base:           0.875rem;    /* 14px – body */
+  --font-size-md:             1rem;        /* 16px – titles */
+  --font-size-lg:             1.25rem;     /* 20px */
+  --font-size-xl:             1.5rem;      /* 24px */
+  --font-size-2xl:            1.75rem;     /* 28px – headlines */
+  --font-size-3xl:            2.25rem;     /* 36px */
+  --font-size-display:        3.5rem;      /* 56px – impact metrics */
+
+  --font-weight-regular:      400;
+  --font-weight-medium:       500;
+  --font-weight-semibold:     600;
+  --font-weight-bold:         700;
+
+  --line-height-tight:        1.2;
+  --line-height-normal:       1.5;
+  --line-height-relaxed:      1.65;
+
+  --letter-spacing-tight:     -0.01em;
+  --letter-spacing-normal:    0;
+  --letter-spacing-wide:      0.05em;
+
+  /* ── Spacing (4px grid) ── */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+
+  /* ── Border Radius ── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-3xl:  24px;
+  --radius-full: 9999px;
+
+  /* ── Elevation (Dark mode = tonal, no shadows) ── */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.16);
+  --elevation-3: 0 12px 32px rgba(0, 0, 0, 0.24);
+  --elevation-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.45);
+
+  /* ── Motion ── */
+  --ease-standard:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter:     cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit:      cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce:    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:  150ms;
+  --duration-normal: 300ms;
+  --duration-slow:  450ms;
+
+  /* ── Layout ── */
+  --sidebar-width:      260px;
+  --sidebar-collapsed:  68px;
+  --topbar-height:      56px;
+  --content-max-width:  1280px;
+}
