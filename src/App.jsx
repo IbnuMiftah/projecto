@@ -8,6 +8,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import Beneficiaries from './pages/Beneficiaries';
+import Distributions from './pages/Distributions';
 import UserApproval from './pages/admin/UserApproval';
 
 export default function App() {
@@ -32,8 +33,7 @@ export default function App() {
             <Route path="/members" element={<Members />} />
             <Route path="/beneficiaries" element={<Beneficiaries />} />
 
-            {/* Phase 3 placeholder */}
-            <Route path="/distributions" element={<PlaceholderPage title="Distributions" desc="Campaign management and distribution tracking — coming in Phase 3." />} />
+            <Route path="/distributions" element={<Distributions />} />
 
             {/* Utility routes */}
             <Route path="/settings" element={<PlaceholderPage title="Settings" desc="System preferences and configuration." />} />
