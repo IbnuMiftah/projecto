@@ -10,6 +10,7 @@ import Members from './pages/Members';
 import Beneficiaries from './pages/Beneficiaries';
 import Distributions from './pages/Distributions';
 import UserApproval from './pages/admin/UserApproval';
+import AuditLogs from './pages/admin/AuditLogs';
 
 export default function App() {
   return (
@@ -41,7 +42,7 @@ export default function App() {
 
             {/* Admin routes */}
             <Route path="/admin/users" element={<UserApproval />} />
-            <Route path="/admin/audit" element={<PlaceholderPage title="Audit Logs" desc="System activity tracking for compliance." />} />
+            <Route path="/admin/audit" element={<AuditLogs />} />
             <Route path="/admin/settings" element={<PlaceholderPage title="System Settings" desc="Global configuration and feature toggles." />} />
           </Route>
 

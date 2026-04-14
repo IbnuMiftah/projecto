@@ -105,6 +105,31 @@
 .stat-card__change--warning { color: var(--warning); }
 .stat-card__change--neutral { color: var(--on-surface-variant); }
 
+/* ── Summary Row ── */
+.dashboard__summary-row {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.dashboard__summary-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-container);
+  border-radius: var(--radius-md);
+  flex: 1;
+}
+.dashboard__summary-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--on-surface);
+}
+.dashboard__summary-label {
+  font-size: var(--font-size-xs);
+  color: var(--on-surface-variant);
+}
+
 /* ── Main Grid ── */
 .dashboard__grid {
   display: grid;
