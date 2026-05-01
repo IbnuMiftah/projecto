@@ -45,6 +45,7 @@ coverage
 .claude/
 tasks/
 plans/
+skills-lock.json
 
-# Supabase SQL migration files (run manually, not committed)
-supabase-phase-*.sql
+# Supabase SQL files (run manually, not committed)
+*.sql
