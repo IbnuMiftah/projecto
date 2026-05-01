@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermission } from '../hooks/usePermission';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X,
-  AlertCircle, Users, AlertTriangle,
+  AlertCircle, Users, AlertTriangle, ShieldAlert,
 } from 'lucide-react';
 import '../styles/data-pages.css';
+import Pagination from '../components/Pagination';
 
 const CATEGORIES = ['general', 'orphan', 'elderly', 'disabled', 'widow', 'displaced'];
 const STATUSES = ['active', 'inactive', 'flagged', 'duplicate'];
@@ -17,41 +19,12 @@ const EMPTY_FORM = {
   household_size: 1, notes: '',
 };
 
-function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const start = (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
 
-  const pages = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
-
-  return (
-    <div className="data-page__pagination">
-      <span className="data-page__pagination-info">
-        Showing {start} to {end} of {totalItems.toLocaleString()} beneficiaries
-      </span>
-      <div className="data-page__pagination-controls">
-        <button className="data-page__page-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹ Previous</button>
-        {pages.map((p, i) =>
-          p === '...' ? <span key={`e${i}`} className="data-page__page-ellipsis">…</span> :
-          <button key={p} className={`data-page__page-btn ${currentPage === p ? 'data-page__page-btn--active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
-        )}
-        <button className="data-page__page-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>Next ›</button>
-      </div>
-    </div>
-  );
-}
 
 export default function Beneficiaries() {
   const { user } = useAuth();
+  const canRegister = usePermission('register_beneficiary');
+  const canEdit = usePermission('edit_records');
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -197,11 +170,24 @@ export default function Beneficiaries() {
               <AlertTriangle size={14} /> {stats.flagged} Flagged
             </div>
           )}
-          <button className="btn btn--primary" onClick={openCreate}>
+          <button className="btn btn--primary" onClick={openCreate} disabled={!canRegister} title={!canRegister ? 'Registration disabled by administrator' : undefined}>
             <Plus size={16} strokeWidth={2} /> Add New Beneficiary
           </button>
         </div>
       </div>
+
+      {!canRegister && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Beneficiary registration has been disabled by your administrator.
+        </div>
+      )}
+      {!canEdit && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Record editing has been disabled by your administrator.
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="data-page__toolbar">
@@ -227,7 +213,7 @@ export default function Beneficiaries() {
           <div className="data-page__empty-icon"><Users size={28} strokeWidth={1.5} /></div>
           <h3>{search ? 'No results found' : 'No beneficiaries registered'}</h3>
           <p>{search ? 'Try a different search term or FAYDA ID.' : 'Register your first beneficiary to start tracking aid distribution.'}</p>
-          {!search && <button className="btn btn--primary" onClick={openCreate}><Plus size={16} /> Add New Beneficiary</button>}
+          {!search && <button className="btn btn--primary" onClick={openCreate} disabled={!canRegister} title={!canRegister ? 'Registration disabled by administrator' : undefined}><Plus size={16} /> Add New Beneficiary</button>}
         </div>
       ) : (
         <>
@@ -261,14 +247,14 @@ export default function Beneficiaries() {
                     {String(b.household_size).padStart(2, '0')}
                   </div>
                   <div className="data-table__actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="data-table__action-btn" onClick={() => openEdit(b)} title="Edit"><Pencil size={14} /></button>
+                    <button className="data-table__action-btn" onClick={() => openEdit(b)} disabled={!canEdit} title={!canEdit ? 'Editing disabled by administrator' : 'Edit'}><Pencil size={14} /></button>
                     <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(b.id)} title="Delete"><Trash2 size={14} /></button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} />
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} itemLabel="beneficiaries" />
         </>
       )}
 

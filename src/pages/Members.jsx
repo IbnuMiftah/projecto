@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermission } from '../hooks/usePermission';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X,
-  AlertCircle, Users as UsersIcon, CreditCard, DollarSign,
+  AlertCircle, Users as UsersIcon, CreditCard, DollarSign, ShieldAlert,
 } from 'lucide-react';
 import '../styles/data-pages.css';
+import Pagination from '../components/Pagination';
 
 const PLANS = ['weekly', 'monthly', 'yearly'];
 const PAYMENT_STATUSES = ['pending', 'paid', 'overdue', 'exempt'];
@@ -17,41 +19,12 @@ const EMPTY_FORM = {
   payment_amount: '', notes: '',
 };
 
-function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const start = (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
 
-  const pages = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
-
-  return (
-    <div className="data-page__pagination">
-      <span className="data-page__pagination-info">
-        Showing {start} to {end} of {totalItems.toLocaleString()} members
-      </span>
-      <div className="data-page__pagination-controls">
-        <button className="data-page__page-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹ Previous</button>
-        {pages.map((p, i) =>
-          p === '...' ? <span key={`e${i}`} className="data-page__page-ellipsis">…</span> :
-          <button key={p} className={`data-page__page-btn ${currentPage === p ? 'data-page__page-btn--active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
-        )}
-        <button className="data-page__page-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>Next ›</button>
-      </div>
-    </div>
-  );
-}
 
 export default function Members() {
   const { user, profile } = useAuth();
+  const canCollect = usePermission('collect_payments');
+  const canEdit = usePermission('edit_records');
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -289,11 +262,24 @@ export default function Members() {
           <p>Review, register, and manage institutional community members.</p>
         </div>
         <div className="data-page__header-right">
-          <button className="btn btn--primary" onClick={openCreate}>
+          <button className="btn btn--primary" onClick={openCreate} disabled={!canCollect} title={!canCollect ? 'Member registration disabled by administrator' : undefined}>
             <Plus size={16} strokeWidth={2} /> Register New Member
           </button>
         </div>
       </div>
+
+      {!canCollect && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Member registration and payments have been disabled by your administrator.
+        </div>
+      )}
+      {!canEdit && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Record editing has been disabled by your administrator.
+        </div>
+      )}
 
       {/* Stats */}
       <div className="data-page__stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -335,7 +321,7 @@ export default function Members() {
               <div className="data-page__empty-icon"><UsersIcon size={28} strokeWidth={1.5} /></div>
               <h3>{search ? 'No results found' : 'No members yet'}</h3>
               <p>{search ? 'Try a different search term.' : 'Register your first member to get started.'}</p>
-              {!search && <button className="btn btn--primary" onClick={openCreate}><Plus size={16} /> Register New Member</button>}
+              {!search && <button className="btn btn--primary" onClick={openCreate} disabled={!canCollect} title={!canCollect ? 'Member registration disabled by administrator' : undefined}><Plus size={16} /> Register New Member</button>}
             </div>
           ) : (
             <>
@@ -380,14 +366,14 @@ export default function Members() {
                         </span>
                       </div>
                       <div className="data-table__actions" onClick={(e) => e.stopPropagation()}>
-                        <button className="data-table__action-btn" onClick={() => openEdit(m)} title="Edit"><Pencil size={14} /></button>
+                        <button className="data-table__action-btn" onClick={() => openEdit(m)} disabled={!canEdit} title={!canEdit ? 'Editing disabled by administrator' : 'Edit'}><Pencil size={14} /></button>
                         <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(m.id)} title="Delete"><Trash2 size={14} /></button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} />
+              <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} itemLabel="members" />
             </>
           )}
         </div>
@@ -450,8 +436,8 @@ export default function Members() {
                   </button>
                 ))}
               </div>
-              <button type="submit" className="quick-payment__submit" disabled={qpSaving || !qpMember || !qpAmount}>
-                {qpSaving ? 'Processing…' : 'Log Payment'}
+              <button type="submit" className="quick-payment__submit" disabled={qpSaving || !qpMember || !qpAmount || !canCollect} title={!canCollect ? 'Payments disabled by administrator' : undefined}>
+                {qpSaving ? 'Processing…' : !canCollect ? 'Payments Disabled' : 'Log Payment'}
               </button>
               {qpError && (
                 <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--error-container)', color: 'var(--on-error-container)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)' }}>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { FeatureToggleProvider } from './contexts/FeatureToggleContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/Layout/AppLayout';
 import Login from './pages/Login';
@@ -11,11 +12,13 @@ import Beneficiaries from './pages/Beneficiaries';
 import Distributions from './pages/Distributions';
 import UserApproval from './pages/admin/UserApproval';
 import AuditLogs from './pages/admin/AuditLogs';
+import SystemSettings from './pages/admin/SystemSettings';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+      <FeatureToggleProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -40,16 +43,17 @@ export default function App() {
             <Route path="/settings" element={<PlaceholderPage title="Settings" desc="System preferences and configuration." />} />
             <Route path="/help" element={<PlaceholderPage title="Support" desc="Documentation and support resources." />} />
 
-            {/* Admin routes */}
-            <Route path="/admin/users" element={<UserApproval />} />
-            <Route path="/admin/audit" element={<AuditLogs />} />
-            <Route path="/admin/settings" element={<PlaceholderPage title="System Settings" desc="Global configuration and feature toggles." />} />
+            {/* Admin routes — require admin role */}
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserApproval /></ProtectedRoute>} />
+            <Route path="/admin/audit" element={<ProtectedRoute requiredRole="admin"><AuditLogs /></ProtectedRoute>} />
+            <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><SystemSettings /></ProtectedRoute>} />
           </Route>
 
           {/* Redirect root to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+      </FeatureToggleProvider>
       </AuthProvider>
     </BrowserRouter>
   );

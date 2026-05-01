@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { timeAgo } from '../lib/utils';
 import {
   Users, Truck, UserPlus, AlertTriangle, Activity,
   TrendingUp, TrendingDown, Clock, Shield,
   ToggleLeft, ToggleRight, CreditCard, Package,
 } from 'lucide-react';
 import './Dashboard.css';
+
+const CACHE_TTL = 60_000; // 60 seconds
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -31,8 +34,18 @@ export default function Dashboard() {
     'mobile-access': false,
   });
 
-  const fetchStats = useCallback(async () => {
+  /* ── Cache ref ── */
+  const cacheRef = useRef({ ts: 0 });
+
+  /**
+   * BATCH 1: All counts + recent activity (8 parallel head/limit queries → ~1 round trip)
+   */
+  const fetchDashboardData = useCallback(async (force = false) => {
+    // Return cached data if fresh
+    if (!force && Date.now() - cacheRef.current.ts < CACHE_TTL && !loadingStats) return;
+
     setLoadingStats(true);
+
     const [
       { count: benefCount },
       { count: memberCount },
@@ -40,6 +53,8 @@ export default function Dashboard() {
       { count: overdueCount },
       { count: distCount },
       { count: paymentCount },
+      { data: recentDists },
+      { data: recentPayments },
     ] = await Promise.all([
       supabase.from('beneficiaries').select('*', { count: 'exact', head: true }),
       supabase.from('members').select('*', { count: 'exact', head: true }),
@@ -47,6 +62,10 @@ export default function Dashboard() {
       supabase.from('members').select('*', { count: 'exact', head: true }).eq('payment_status', 'overdue'),
       supabase.from('distributions').select('*', { count: 'exact', head: true }),
       supabase.from('payment_logs').select('*', { count: 'exact', head: true }),
+      supabase.from('distributions').select('id, beneficiary_name, distributed_by_name, distributed_at')
+        .order('distributed_at', { ascending: false }).limit(5),
+      supabase.from('payment_logs').select('id, member_name, collected_by_name, amount, payment_method, created_at')
+        .order('created_at', { ascending: false }).limit(5),
     ]);
 
     setStats({
@@ -57,27 +76,17 @@ export default function Dashboard() {
       distributed: distCount || 0,
       paymentsCollected: paymentCount || 0,
     });
-    setLoadingStats(false);
-  }, []);
 
-  const fetchActivity = useCallback(async () => {
-    // Merge distributions + payment_logs as recent activity
-    const [{ data: dists }, { data: payments }] = await Promise.all([
-      supabase.from('distributions').select('id, beneficiary_name, distributed_by_name, distributed_at, campaign_id')
-        .order('distributed_at', { ascending: false }).limit(5),
-      supabase.from('payment_logs').select('id, member_name, collected_by_name, amount, payment_method, created_at')
-        .order('created_at', { ascending: false }).limit(5),
-    ]);
-
+    // Merge activity feeds
     const merged = [
-      ...(dists || []).map(d => ({
+      ...(recentDists || []).map(d => ({
         id: `dist-${d.id}`,
         text: `Aid distributed to ${d.beneficiary_name}`,
         meta: `by ${d.distributed_by_name || 'System'}`,
         time: d.distributed_at,
         type: 'success',
       })),
-      ...(payments || []).map(p => ({
+      ...(recentPayments || []).map(p => ({
         id: `pay-${p.id}`,
         text: `ETB ${parseFloat(p.amount).toLocaleString()} collected from ${p.member_name}`,
         meta: `${p.payment_method?.toUpperCase()} · by ${p.collected_by_name || 'System'}`,
@@ -87,46 +96,40 @@ export default function Dashboard() {
     ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
 
     setRecentActivity(merged);
-  }, []);
+    setLoadingStats(false);
+    cacheRef.current.ts = Date.now();
+  }, [loadingStats]);
 
+  /**
+   * BATCH 2: Campaign progress (1 campaign query + N count queries, N = active/paused campaigns)
+   */
   const fetchCampaignProgress = useCallback(async () => {
     const { data: campaigns } = await supabase
       .from('campaigns').select('id, name, aid_type, status')
       .in('status', ['active', 'paused']);
     if (!campaigns || campaigns.length === 0) { setCampaignProgress([]); return; }
 
-    const { data: dists } = await supabase
-      .from('distributions').select('campaign_id');
+    // Get total beneficiaries + per-campaign distribution counts in parallel
+    const [{ count: totalBenef }, ...campCounts] = await Promise.all([
+      supabase.from('beneficiaries').select('*', { count: 'exact', head: true }),
+      ...campaigns.map(c =>
+        supabase.from('distributions').select('*', { count: 'exact', head: true }).eq('campaign_id', c.id)
+      ),
+    ]);
 
-    const { count: totalBenef } = await supabase
-      .from('beneficiaries').select('*', { count: 'exact', head: true });
-
-    const distCounts = {};
-    (dists || []).forEach(d => { distCounts[d.campaign_id] = (distCounts[d.campaign_id] || 0) + 1; });
-
-    setCampaignProgress(campaigns.map(c => ({
+    setCampaignProgress(campaigns.map((c, i) => ({
       ...c,
-      distributed: distCounts[c.id] || 0,
+      distributed: campCounts[i]?.count || 0,
       total: totalBenef || 0,
     })));
   }, []);
 
   useEffect(() => {
-    fetchStats();
-    fetchActivity();
+    fetchDashboardData();
     fetchCampaignProgress();
-  }, [fetchStats, fetchActivity, fetchCampaignProgress]);
+  }, [fetchDashboardData, fetchCampaignProgress]);
 
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
+
 
   const toggleSwitch = (id) => {
     setToggles(prev => ({ ...prev, [id]: !prev[id] }));

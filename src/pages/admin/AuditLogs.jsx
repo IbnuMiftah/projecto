@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useDebounce } from '../../hooks/useDebounce';
 import { supabase } from '../../lib/supabase';
+import { formatDate } from '../../lib/utils';
 import {
-  Search, Loader2, Clock, Package, CreditCard, UserPlus, Filter,
+  Search, Loader2, Clock, Package, CreditCard,
 } from 'lucide-react';
 import '../../styles/data-pages.css';
+import Pagination from '../../components/Pagination';
 
 const PAGE_SIZE = 10;
 const LOG_TYPES = [
@@ -12,38 +15,12 @@ const LOG_TYPES = [
   { id: 'payments', label: 'Payments', icon: CreditCard },
 ];
 
-function Pagination({ currentPage, totalPages, totalItems, pageSize, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const start = (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
-  const pages = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
-  return (
-    <div className="data-page__pagination">
-      <span className="data-page__pagination-info">Showing {start}–{end} of {totalItems} logs</span>
-      <div className="data-page__pagination-controls">
-        <button className="data-page__page-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹ Prev</button>
-        {pages.map((p, i) =>
-          p === '...' ? <span key={`e${i}`} className="data-page__page-ellipsis">…</span> :
-          <button key={p} className={`data-page__page-btn ${currentPage === p ? 'data-page__page-btn--active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
-        )}
-        <button className="data-page__page-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>Next ›</button>
-      </div>
-    </div>
-  );
-}
+
 
 export default function AuditLogs() {
   const [logType, setLogType] = useState('all');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -64,7 +41,7 @@ export default function AuditLogs() {
         .select('id, beneficiary_name, beneficiary_fayda_id, distributed_by_name, distributed_at, notes, campaign_id', { count: 'exact' })
         .order('distributed_at', { ascending: false });
 
-      if (search) q = q.or(`beneficiary_name.ilike.%${search}%,distributed_by_name.ilike.%${search}%,beneficiary_fayda_id.ilike.%${search}%`);
+      if (debouncedSearch) q = q.or(`beneficiary_name.ilike.%${debouncedSearch}%,distributed_by_name.ilike.%${debouncedSearch}%,beneficiary_fayda_id.ilike.%${debouncedSearch}%`);
       if (dateFrom) q = q.gte('distributed_at', dateFrom);
       if (dateTo) q = q.lte('distributed_at', dateTo + 'T23:59:59');
 
@@ -98,7 +75,7 @@ export default function AuditLogs() {
         .select('id, member_name, amount, payment_method, collected_by_name, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      if (search) q = q.or(`member_name.ilike.%${search}%,collected_by_name.ilike.%${search}%`);
+      if (debouncedSearch) q = q.or(`member_name.ilike.%${debouncedSearch}%,collected_by_name.ilike.%${debouncedSearch}%`);
       if (dateFrom) q = q.gte('created_at', dateFrom);
       if (dateTo) q = q.lte('created_at', dateTo + 'T23:59:59');
 
@@ -135,18 +112,12 @@ export default function AuditLogs() {
     setLogs(allLogs);
     setTotal(totalCount);
     setLoading(false);
-  }, [logType, search, page, dateFrom, dateTo]);
+  }, [logType, debouncedSearch, page, dateFrom, dateTo]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
-  useEffect(() => { setPage(1); }, [logType, search, dateFrom, dateTo]);
+  useEffect(() => { setPage(1); }, [logType, debouncedSearch, dateFrom, dateTo]);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
-  };
+
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -239,7 +210,7 @@ export default function AuditLogs() {
               ))}
             </div>
           </div>
-          <Pagination currentPage={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
+          <Pagination currentPage={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} itemLabel="logs" />
         </>
       )}
     </div>

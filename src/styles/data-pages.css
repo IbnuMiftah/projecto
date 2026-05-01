@@ -1010,3 +1010,23 @@
   border: 1px solid rgba(76, 175, 80, 0.3);
   color: var(--success);
 }
+
+/* ── Permission Disabled Banner ── */
+.permission-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--warning-container);
+  color: var(--on-warning-container, #5c4813);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-5);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+.permission-banner__icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}

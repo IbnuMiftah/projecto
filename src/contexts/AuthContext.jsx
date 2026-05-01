@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
@@ -70,7 +70,7 @@ export function AuthProvider({ children }) {
     };
   }, [fetchProfile]);
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -105,49 +105,66 @@ export function AuthProvider({ children }) {
     }
 
     return data;
-  };
+  }, [fetchProfile]);
 
-  const signUp = async ({ email, password, fullName, phone }) => {
+  const signUp = useCallback(async ({ email, password, fullName, phone }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone: phone || null,
+        },
+      },
     });
     if (error) throw error;
 
+    // The database trigger handle_new_user() creates the profile automatically.
+    // This client-side insert is a fallback in case the trigger hasn't been set up.
     if (data.user) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: data.user.id,
           full_name: fullName,
           phone: phone || null,
           role: 'worker',
           status: 'pending_approval',
           permissions: {},
-        });
+        }, { onConflict: 'id', ignoreDuplicates: true });
       if (profileError) {
-        console.error('[Auth] Profile creation error:', profileError.message);
+        // Expected to fail if user has no session yet (email confirmation required).
+        // The DB trigger handles this case.
+        console.warn('[Auth] Client-side profile insert skipped (trigger handles it):', profileError.message);
       }
     }
     return data;
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setProfile(null);
     setUser(null);
     setSession(null);
-  };
+  }, []);
 
-  const resetPassword = async (email) => {
+  const resetPassword = useCallback(async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) throw error;
-  };
+  }, []);
 
-  const value = {
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      const prof = await fetchProfile(user.id);
+      setProfile(prof);
+    }
+  }, [user, fetchProfile]);
+
+  const value = useMemo(() => ({
     session,
     user,
     profile,
@@ -156,13 +173,8 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     resetPassword,
-    refreshProfile: async () => {
-      if (user) {
-        const prof = await fetchProfile(user.id);
-        setProfile(prof);
-      }
-    },
-  };
+    refreshProfile,
+  }), [session, user, profile, loading, signIn, signUp, signOut, resetPassword, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

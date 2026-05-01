@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
+import { usePermission } from '../hooks/usePermission';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X, AlertCircle,
-  Package, Play, Pause, CheckCircle2, ShieldCheck, AlertTriangle,
-  UserCheck, Clock, Truck,
+  Package, Play, Pause, CheckCircle2, AlertTriangle,
+  UserCheck, Clock, Truck, ShieldAlert,
 } from 'lucide-react';
 import '../styles/data-pages.css';
+import Pagination from '../components/Pagination';
 
 const AID_TYPES = ['food', 'clothing', 'medical', 'financial', 'other'];
-const CAMPAIGN_STATUSES = ['draft', 'active', 'paused', 'completed'];
+
 const PAGE_SIZE = 10;
 
 const EMPTY_CAMPAIGN = {
@@ -41,41 +44,14 @@ function TabBar({ tabs, active, onChange }) {
   );
 }
 
-/* ─── Pagination ────────────────────────────────────── */
-function Pagination({ currentPage, totalPages, totalItems, pageSize, label, onPageChange }) {
-  if (totalPages <= 1) return null;
-  const start = (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
-  const pages = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
-  return (
-    <div className="data-page__pagination">
-      <span className="data-page__pagination-info">Showing {start}–{end} of {totalItems} {label}</span>
-      <div className="data-page__pagination-controls">
-        <button className="data-page__page-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹ Prev</button>
-        {pages.map((p, i) =>
-          p === '...' ? <span key={`e${i}`} className="data-page__page-ellipsis">…</span> :
-          <button key={p} className={`data-page__page-btn ${currentPage === p ? 'data-page__page-btn--active' : ''}`} onClick={() => onPageChange(p)}>{p}</button>
-        )}
-        <button className="data-page__page-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>Next ›</button>
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
 export default function Distributions() {
   const { user, profile } = useAuth();
+  const canDistribute = usePermission('distribute_aid');
+  const canManageCampaigns = usePermission('manage_campaigns');
   const [tab, setTab] = useState('campaigns');
 
   /* ── Campaigns state ── */
@@ -119,16 +95,21 @@ export default function Distributions() {
     setLoadingCampaigns(false);
   }, []);
 
-  const fetchDistCounts = useCallback(async () => {
-    const { data } = await supabase
-      .from('distributions')
-      .select('campaign_id');
-    if (data) {
-      const counts = {};
-      data.forEach(d => { counts[d.campaign_id] = (counts[d.campaign_id] || 0) + 1; });
-      setDistCounts(counts);
-    }
-  }, []);
+  const fetchDistCounts = useCallback(async (campaignList) => {
+    const list = campaignList || campaigns;
+    if (!list.length) return;
+    const counts = {};
+    await Promise.all(
+      list.map(async (c) => {
+        const { count } = await supabase
+          .from('distributions')
+          .select('*', { count: 'exact', head: true })
+          .eq('campaign_id', c.id);
+        counts[c.id] = count || 0;
+      })
+    );
+    setDistCounts(counts);
+  }, [campaigns]);
 
   const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -148,7 +129,8 @@ export default function Distributions() {
     setLoadingHistory(false);
   }, [historyPage, historyCampaignFilter]);
 
-  useEffect(() => { fetchCampaigns(); fetchDistCounts(); }, [fetchCampaigns, fetchDistCounts]);
+  useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+  useEffect(() => { if (campaigns.length) fetchDistCounts(); }, [campaigns, fetchDistCounts]);
   useEffect(() => { if (tab === 'history') fetchHistory(); }, [tab, fetchHistory]);
 
   const activeCampaigns = useMemo(() => campaigns.filter(c => c.status === 'active'), [campaigns]);
@@ -209,21 +191,29 @@ export default function Distributions() {
 
   /* ════════════ DISTRIBUTE WORKFLOW ════════════ */
 
-  const searchBeneficiaries = async (query) => {
-    setBenefSearch(query);
-    setSelectedBenef(null);
-    setDistResult(null);
-    if (!query || query.length < 2) { setBenefResults([]); return; }
-    setSearchingBenef(true);
-    const q = `%${query}%`;
-    const { data } = await supabase
-      .from('beneficiaries')
-      .select('*')
-      .or(`full_name.ilike.${q},fayda_id.ilike.${q},phone.ilike.${q}`)
-      .limit(10);
-    setBenefResults(data || []);
-    setSearchingBenef(false);
-  };
+  const debouncedBenefSearch = useDebounce(benefSearch, 300);
+
+  // Fire Supabase query only when debounced value changes
+  useEffect(() => {
+    if (!debouncedBenefSearch || debouncedBenefSearch.length < 2) { setBenefResults([]); return; }
+    if (selectedBenef) return; // Don't search when a beneficiary is already selected
+    let cancelled = false;
+    const doSearch = async () => {
+      setSearchingBenef(true);
+      const q = `%${debouncedBenefSearch}%`;
+      const { data } = await supabase
+        .from('beneficiaries')
+        .select('*')
+        .or(`full_name.ilike.${q},fayda_id.ilike.${q},phone.ilike.${q}`)
+        .limit(10);
+      if (!cancelled) {
+        setBenefResults(data || []);
+        setSearchingBenef(false);
+      }
+    };
+    doSearch();
+    return () => { cancelled = true; };
+  }, [debouncedBenefSearch, selectedBenef]);
 
   const selectBeneficiary = async (benef) => {
     setSelectedBenef(benef);
@@ -320,12 +310,25 @@ export default function Distributions() {
         </div>
         <div className="data-page__header-right">
           {tab === 'campaigns' && (
-            <button className="btn btn--primary" onClick={openCreateCampaign}>
+            <button className="btn btn--primary" onClick={openCreateCampaign} disabled={!canManageCampaigns} title={!canManageCampaigns ? 'Campaign management disabled by administrator' : undefined}>
               <Plus size={16} strokeWidth={2} /> New Campaign
             </button>
           )}
         </div>
       </div>
+
+      {!canDistribute && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Aid distribution has been disabled by your administrator.
+        </div>
+      )}
+      {!canManageCampaigns && (
+        <div className="permission-banner">
+          <ShieldAlert size={16} className="permission-banner__icon" />
+          Campaign management has been disabled by your administrator.
+        </div>
+      )}
 
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
 
@@ -339,7 +342,7 @@ export default function Distributions() {
               <div className="data-page__empty-icon"><Package size={28} strokeWidth={1.5} /></div>
               <h3>No campaigns yet</h3>
               <p>Create your first distribution campaign to get started.</p>
-              <button className="btn btn--primary" onClick={openCreateCampaign}><Plus size={16} /> New Campaign</button>
+              <button className="btn btn--primary" onClick={openCreateCampaign} disabled={!canManageCampaigns} title={!canManageCampaigns ? 'Campaign management disabled by administrator' : undefined}><Plus size={16} /> New Campaign</button>
             </div>
           ) : (
             <div className="dist-campaigns-grid">
@@ -436,7 +439,7 @@ export default function Distributions() {
                         className="data-page__search-input"
                         placeholder="Search by name, FAYDA ID, or phone…"
                         value={benefSearch}
-                        onChange={e => searchBeneficiaries(e.target.value)}
+                        onChange={e => { setBenefSearch(e.target.value); setSelectedBenef(null); setDistResult(null); }}
                       />
                     </div>
                     {searchingBenef && (
@@ -517,8 +520,9 @@ export default function Distributions() {
                         <button
                           className="btn btn--primary"
                           style={{ marginTop: 'var(--space-4)', width: '100%', justifyContent: 'center', padding: 'var(--space-4)' }}
-                          disabled={distributing}
+                          disabled={distributing || !canDistribute}
                           onClick={markAsReceived}
+                          title={!canDistribute ? 'Distribution is currently disabled by your administrator' : undefined}
                         >
                           {distributing ? (
                             <><Loader2 size={16} className="animate-spin" /> Processing…</>
@@ -594,7 +598,7 @@ export default function Distributions() {
                   ))}
                 </div>
               </div>
-              <Pagination currentPage={historyPage} totalPages={Math.ceil(historyTotal / PAGE_SIZE)} totalItems={historyTotal} pageSize={PAGE_SIZE} label="records" onPageChange={setHistoryPage} />
+              <Pagination currentPage={historyPage} totalPages={Math.ceil(historyTotal / PAGE_SIZE)} totalItems={historyTotal} pageSize={PAGE_SIZE} itemLabel="records" onPageChange={setHistoryPage} />
             </>
           )}
         </div>
