@@ -39,6 +39,7 @@ Thumbs.db
 coverage
 
 # Agent / AI skill artifacts
+.agents/
 .skills/
 .cursor/
 .claude/
