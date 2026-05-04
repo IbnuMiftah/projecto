@@ -170,9 +170,11 @@ export default function Beneficiaries() {
               <AlertTriangle size={14} /> {stats.flagged} Flagged
             </div>
           )}
-          <button className="btn btn--primary" onClick={openCreate} disabled={!canRegister} title={!canRegister ? 'Registration disabled by administrator' : undefined}>
-            <Plus size={16} strokeWidth={2} /> Add New Beneficiary
-          </button>
+          {canRegister && (
+            <button className="btn btn--primary" onClick={openCreate}>
+              <Plus size={16} strokeWidth={2} /> Add New Beneficiary
+            </button>
+          )}
         </div>
       </div>
 
@@ -213,7 +215,7 @@ export default function Beneficiaries() {
           <div className="data-page__empty-icon"><Users size={28} strokeWidth={1.5} /></div>
           <h3>{search ? 'No results found' : 'No beneficiaries registered'}</h3>
           <p>{search ? 'Try a different search term or FAYDA ID.' : 'Register your first beneficiary to start tracking aid distribution.'}</p>
-          {!search && <button className="btn btn--primary" onClick={openCreate} disabled={!canRegister} title={!canRegister ? 'Registration disabled by administrator' : undefined}><Plus size={16} /> Add New Beneficiary</button>}
+          {!search && canRegister && <button className="btn btn--primary" onClick={openCreate}><Plus size={16} /> Add New Beneficiary</button>}
         </div>
       ) : (
         <>
@@ -247,8 +249,8 @@ export default function Beneficiaries() {
                     {String(b.household_size).padStart(2, '0')}
                   </div>
                   <div className="data-table__actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="data-table__action-btn" onClick={() => openEdit(b)} disabled={!canEdit} title={!canEdit ? 'Editing disabled by administrator' : 'Edit'}><Pencil size={14} /></button>
-                    <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(b.id)} title="Delete"><Trash2 size={14} /></button>
+                    {canEdit && <button className="data-table__action-btn" onClick={() => openEdit(b)} title="Edit"><Pencil size={14} /></button>}
+                    {canEdit && <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(b.id)} title="Delete"><Trash2 size={14} /></button>}
                   </div>
                 </div>
               ))}

@@ -24,6 +24,13 @@ const ROLE_TEMPLATES = {
   auditor: { label: 'Auditor (Read-Only)', permissions: { register_beneficiary: false, distribute_aid: false, edit_records: false, collect_payments: false, manage_campaigns: false } },
 };
 
+/** Maps each role to its default permission template */
+const ROLE_DEFAULT_PERMS = {
+  worker: ROLE_TEMPLATES.field_worker.permissions,
+  finance: ROLE_TEMPLATES.finance_officer.permissions,
+  auditor: ROLE_TEMPLATES.auditor.permissions,
+};
+
 export default function UserApproval() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +86,10 @@ export default function UserApproval() {
     }
   };
 
-  const approveUser = (userId, role) =>
-    updateUser(userId, { status: 'active', role });
+  const approveUser = (userId, role) => {
+    const permissions = ROLE_DEFAULT_PERMS[role] || ROLE_TEMPLATES.full_access.permissions;
+    return updateUser(userId, { status: 'active', role, permissions });
+  };
 
   const rejectUser = (userId) =>
     updateUser(userId, { status: 'rejected' });

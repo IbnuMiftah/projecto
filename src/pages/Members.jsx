@@ -323,7 +323,7 @@ export default function Members() {
               <div className="data-page__empty-icon"><UsersIcon size={28} strokeWidth={1.5} /></div>
               <h3>{search ? 'No results found' : 'No members yet'}</h3>
               <p>{search ? 'Try a different search term.' : 'Register your first member to get started.'}</p>
-              {!search && <button className="btn btn--primary" onClick={openCreate} disabled={!canCollect} title={!canCollect ? 'Member registration disabled by administrator' : undefined}><Plus size={16} /> Register New Member</button>}
+              {!search && canCollect && <button className="btn btn--primary" onClick={openCreate}><Plus size={16} /> Register New Member</button>}
             </div>
           ) : (
             <>
