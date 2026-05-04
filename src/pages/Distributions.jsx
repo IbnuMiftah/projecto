@@ -309,8 +309,8 @@ export default function Distributions() {
           <p>Manage campaigns and track aid distribution to beneficiaries.</p>
         </div>
         <div className="data-page__header-right">
-          {tab === 'campaigns' && (
-            <button className="btn btn--primary" onClick={openCreateCampaign} disabled={!canManageCampaigns} title={!canManageCampaigns ? 'Campaign management disabled by administrator' : undefined}>
+          {tab === 'campaigns' && canManageCampaigns && (
+            <button className="btn btn--primary" onClick={openCreateCampaign}>
               <Plus size={16} strokeWidth={2} /> New Campaign
             </button>
           )}
@@ -342,7 +342,7 @@ export default function Distributions() {
               <div className="data-page__empty-icon"><Package size={28} strokeWidth={1.5} /></div>
               <h3>No campaigns yet</h3>
               <p>Create your first distribution campaign to get started.</p>
-              <button className="btn btn--primary" onClick={openCreateCampaign} disabled={!canManageCampaigns} title={!canManageCampaigns ? 'Campaign management disabled by administrator' : undefined}><Plus size={16} /> New Campaign</button>
+              {canManageCampaigns && <button className="btn btn--primary" onClick={openCreateCampaign}><Plus size={16} /> New Campaign</button>}
             </div>
           ) : (
             <div className="dist-campaigns-grid">
@@ -385,8 +385,8 @@ export default function Distributions() {
                         <Play size={13} /> Resume
                       </button>
                     )}
-                    <button className="btn btn--sm btn--ghost" onClick={() => openEditCampaign(c)}><Pencil size={13} /></button>
-                    {c.status === 'draft' && (
+                    {canManageCampaigns && <button className="btn btn--sm btn--ghost" onClick={() => openEditCampaign(c)}><Pencil size={13} /></button>}
+                    {c.status === 'draft' && canManageCampaigns && (
                       <button className="btn btn--sm btn--danger" onClick={() => deleteCampaign(c.id)}><Trash2 size={13} /></button>
                     )}
                   </div>
@@ -511,7 +511,7 @@ export default function Distributions() {
                       </div>
                     )}
 
-                    {distResult?.type !== 'duplicate' && distResult?.type !== 'success' && (
+                    {distResult?.type !== 'duplicate' && distResult?.type !== 'success' && canDistribute && (
                       <>
                         <div style={{ marginTop: 'var(--space-4)' }}>
                           <label className="quick-payment__field-label">Notes (optional)</label>
@@ -520,9 +520,8 @@ export default function Distributions() {
                         <button
                           className="btn btn--primary"
                           style={{ marginTop: 'var(--space-4)', width: '100%', justifyContent: 'center', padding: 'var(--space-4)' }}
-                          disabled={distributing || !canDistribute}
+                          disabled={distributing}
                           onClick={markAsReceived}
-                          title={!canDistribute ? 'Distribution is currently disabled by your administrator' : undefined}
                         >
                           {distributing ? (
                             <><Loader2 size={16} className="animate-spin" /> Processing…</>

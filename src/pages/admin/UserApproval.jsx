@@ -1,19 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Clock,
-  UserCheck,
-  UserX,
-  ChevronDown,
-  AlertCircle,
-  RefreshCw,
+  CheckCircle2, XCircle, Loader2, Clock, UserCheck, UserX,
+  ChevronDown, ChevronUp, AlertCircle, RefreshCw, Shield,
 } from 'lucide-react';
 import './UserApproval.css';
 
 const ROLES = ['worker', 'finance', 'auditor'];
+
+const PERMISSION_KEYS = [
+  { key: 'register_beneficiary', label: 'Register Beneficiary' },
+  { key: 'distribute_aid', label: 'Distribute Aid' },
+  { key: 'edit_records', label: 'Edit Records' },
+  { key: 'collect_payments', label: 'Collect Payments' },
+  { key: 'manage_campaigns', label: 'Manage Campaigns' },
+];
+
+/** Role templates: predefined permission sets */
+const ROLE_TEMPLATES = {
+  full_access: { label: 'Full Access', permissions: { register_beneficiary: true, distribute_aid: true, edit_records: true, collect_payments: true, manage_campaigns: true } },
+  field_worker: { label: 'Field Worker', permissions: { register_beneficiary: true, distribute_aid: true, edit_records: false, collect_payments: false, manage_campaigns: false } },
+  finance_officer: { label: 'Finance Officer', permissions: { register_beneficiary: false, distribute_aid: false, edit_records: true, collect_payments: true, manage_campaigns: false } },
+  auditor: { label: 'Auditor (Read-Only)', permissions: { register_beneficiary: false, distribute_aid: false, edit_records: false, collect_payments: false, manage_campaigns: false } },
+};
 
 export default function UserApproval() {
   const [users, setUsers] = useState([]);
@@ -21,6 +30,9 @@ export default function UserApproval() {
   const [actionLoading, setActionLoading] = useState(null);
   const [filter, setFilter] = useState('pending_approval');
   const [error, setError] = useState('');
+  const [expandedUser, setExpandedUser] = useState(null);
+  const [editingPerms, setEditingPerms] = useState({});
+  const [permSaving, setPermSaving] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -78,6 +90,41 @@ export default function UserApproval() {
 
   const reactivateUser = (userId) =>
     updateUser(userId, { status: 'active' });
+
+  const toggleExpandUser = (userId, currentPerms) => {
+    if (expandedUser === userId) {
+      setExpandedUser(null);
+      return;
+    }
+    setExpandedUser(userId);
+    // Initialize editing state from user's current permissions (empty {} = all granted)
+    const perms = {};
+    for (const p of PERMISSION_KEYS) {
+      perms[p.key] = currentPerms?.[p.key] !== false; // missing = granted
+    }
+    setEditingPerms(perms);
+  };
+
+  const applyTemplate = (templateKey) => {
+    setEditingPerms({ ...ROLE_TEMPLATES[templateKey].permissions });
+  };
+
+  const savePermissions = async (userId) => {
+    setPermSaving(true);
+    try {
+      const { error: err } = await supabase
+        .from('profiles')
+        .update({ permissions: editingPerms, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (err) throw err;
+      setExpandedUser(null);
+      await fetchUsers();
+    } catch (err) {
+      setError(`Failed to save permissions: ${err.message}`);
+    } finally {
+      setPermSaving(false);
+    }
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -144,7 +191,8 @@ export default function UserApproval() {
       ) : (
         <div className="user-approval__list">
           {users.map((u) => (
-            <div className="user-row" key={u.id}>
+            <div className="user-row-wrapper" key={u.id}>
+              <div className="user-row">
               <div className="user-row__avatar">
                 {u.full_name?.charAt(0)?.toUpperCase() || '?'}
               </div>
@@ -227,8 +275,60 @@ export default function UserApproval() {
                     Reactivate
                   </button>
                 ) : null}
+
+                {(u.status === 'active' || u.status === 'suspended') && u.role !== 'admin' && (
+                  <button
+                    className={`user-row__action ${expandedUser === u.id ? 'user-row__action--active' : ''}`}
+                    onClick={() => toggleExpandUser(u.id, u.permissions)}
+                    title="Edit permissions"
+                  >
+                    <Shield size={16} />
+                    {expandedUser === u.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Expanded Permission Editor */}
+            {expandedUser === u.id && (
+              <div className="user-perms">
+                <div className="user-perms__templates">
+                  <span className="user-perms__templates-label">Templates:</span>
+                  {Object.entries(ROLE_TEMPLATES).map(([key, tpl]) => (
+                    <button
+                      key={key}
+                      className="user-perms__template-btn"
+                      onClick={() => applyTemplate(key)}
+                    >
+                      {tpl.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="user-perms__toggles">
+                  {PERMISSION_KEYS.map(p => (
+                    <label key={p.key} className="user-perms__toggle">
+                      <span>{p.label}</span>
+                      <button
+                        type="button"
+                        className={`toggle-switch toggle-switch--sm ${editingPerms[p.key] ? 'toggle-switch--on' : ''}`}
+                        onClick={() => setEditingPerms(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+                        aria-label={`${p.label}: ${editingPerms[p.key] ? 'Enabled' : 'Disabled'}`}
+                      >
+                        <div className="toggle-switch__track" />
+                        <div className="toggle-switch__thumb" />
+                      </button>
+                    </label>
+                  ))}
+                </div>
+                <div className="user-perms__actions">
+                  <button className="btn btn--primary btn--sm" onClick={() => savePermissions(u.id)} disabled={permSaving}>
+                    {permSaving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Save Permissions'}
+                  </button>
+                  <button className="btn btn--sm" onClick={() => setExpandedUser(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
           ))}
         </div>
       )}

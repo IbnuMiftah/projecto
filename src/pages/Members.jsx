@@ -262,9 +262,11 @@ export default function Members() {
           <p>Review, register, and manage institutional community members.</p>
         </div>
         <div className="data-page__header-right">
-          <button className="btn btn--primary" onClick={openCreate} disabled={!canCollect} title={!canCollect ? 'Member registration disabled by administrator' : undefined}>
-            <Plus size={16} strokeWidth={2} /> Register New Member
-          </button>
+          {canCollect && (
+            <button className="btn btn--primary" onClick={openCreate}>
+              <Plus size={16} strokeWidth={2} /> Register New Member
+            </button>
+          )}
         </div>
       </div>
 
@@ -366,8 +368,8 @@ export default function Members() {
                         </span>
                       </div>
                       <div className="data-table__actions" onClick={(e) => e.stopPropagation()}>
-                        <button className="data-table__action-btn" onClick={() => openEdit(m)} disabled={!canEdit} title={!canEdit ? 'Editing disabled by administrator' : 'Edit'}><Pencil size={14} /></button>
-                        <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(m.id)} title="Delete"><Trash2 size={14} /></button>
+                        {canEdit && <button className="data-table__action-btn" onClick={() => openEdit(m)} title="Edit"><Pencil size={14} /></button>}
+                        {canEdit && <button className="data-table__action-btn data-table__action-btn--danger" onClick={() => handleDelete(m.id)} title="Delete"><Trash2 size={14} /></button>}
                       </div>
                     </div>
                   ))}

@@ -291,3 +291,103 @@
     width: 100%;
   }
 }
+
+/* ── Per-User Permission Editor ── */
+.user-perms {
+  padding: var(--space-4);
+  padding-top: var(--space-3);
+  background: var(--surface-container);
+  border-top: 1px solid var(--outline-variant);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  animation: permSlideDown 200ms var(--ease-standard);
+}
+
+@keyframes permSlideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 400px; }
+}
+
+.user-perms__templates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.user-perms__templates-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--on-surface-variant);
+  margin-right: var(--space-1);
+}
+
+.user-perms__template-btn {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.user-perms__template-btn:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.user-perms__toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.user-perms__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--on-surface);
+  cursor: pointer;
+}
+
+.user-perms__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* Small toggle variant for permission editor */
+.toggle-switch--sm {
+  width: 36px;
+  height: 20px;
+  padding: 4px 0;
+}
+
+.toggle-switch--sm .toggle-switch__track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  top: 4px;
+}
+
+.toggle-switch--sm .toggle-switch__thumb {
+  width: 14px;
+  height: 14px;
+  top: 7px;
+  left: 3px;
+}
+
+.toggle-switch--sm.toggle-switch--on .toggle-switch__thumb {
+  transform: translateX(16px);
+}
+
+.user-row__action--active {
+  background: var(--primary-container);
+  color: var(--primary);
+}
