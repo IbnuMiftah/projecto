@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X,
-  AlertCircle, Users as UsersIcon, CreditCard, DollarSign, ShieldAlert,
+  AlertCircle, Users as UsersIcon, CreditCard, DollarSign, Lock,
 } from 'lucide-react';
 import '../styles/data-pages.css';
 import Pagination from '../components/Pagination';
@@ -272,14 +272,14 @@ export default function Members() {
 
       {!canCollect && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Member registration and payments have been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Member registration and payments are locked. Contact your administrator.
         </div>
       )}
       {!canEdit && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Record editing has been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Record editing is locked. Contact your administrator.
         </div>
       )}
 

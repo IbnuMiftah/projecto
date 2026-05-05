@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X, AlertCircle,
   Package, Play, Pause, CheckCircle2, AlertTriangle,
-  UserCheck, Clock, Truck, ShieldAlert,
+  UserCheck, Clock, Truck, Lock,
 } from 'lucide-react';
 import '../styles/data-pages.css';
 import Pagination from '../components/Pagination';
@@ -319,14 +319,14 @@ export default function Distributions() {
 
       {!canDistribute && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Aid distribution has been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Aid distribution is locked. Contact your administrator.
         </div>
       )}
       {!canManageCampaigns && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Campaign management has been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Campaign management is locked. Contact your administrator.
         </div>
       )}
 

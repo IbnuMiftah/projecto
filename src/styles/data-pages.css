@@ -1011,22 +1011,26 @@
   color: var(--success);
 }
 
-/* ── Permission Disabled Banner ── */
+/* ── Permission Locked Banner ── */
 .permission-banner {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--warning-container);
-  color: var(--on-warning-container, #5c4813);
+  padding: var(--space-3) var(--space-5);
+  background: linear-gradient(135deg, rgba(255, 183, 77, 0.06) 0%, rgba(255, 152, 0, 0.03) 100%);
+  border: 1px solid rgba(255, 183, 77, 0.15);
+  border-left: 3px solid rgba(255, 183, 77, 0.5);
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  line-height: 1.4;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  backdrop-filter: blur(8px);
+  animation: fadeInUp var(--duration-normal) var(--ease-enter);
 }
 
 .permission-banner__icon {
   flex-shrink: 0;
-  opacity: 0.8;
+  color: rgba(255, 183, 77, 0.7);
 }

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
 import {
   Search, Plus, Pencil, Trash2, Loader2, X,
-  AlertCircle, Users, AlertTriangle, ShieldAlert,
+  AlertCircle, Users, AlertTriangle, Lock,
 } from 'lucide-react';
 import '../styles/data-pages.css';
 import Pagination from '../components/Pagination';
@@ -180,14 +180,14 @@ export default function Beneficiaries() {
 
       {!canRegister && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Beneficiary registration has been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Beneficiary registration is locked. Contact your administrator.
         </div>
       )}
       {!canEdit && (
         <div className="permission-banner">
-          <ShieldAlert size={16} className="permission-banner__icon" />
-          Record editing has been disabled by your administrator.
+          <Lock size={16} className="permission-banner__icon" />
+          Record editing is locked. Contact your administrator.
         </div>
       )}
 

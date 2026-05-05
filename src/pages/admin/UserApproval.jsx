@@ -9,11 +9,11 @@ import './UserApproval.css';
 const ROLES = ['worker', 'finance', 'auditor'];
 
 const PERMISSION_KEYS = [
-  { key: 'register_beneficiary', label: 'Register Beneficiary' },
-  { key: 'distribute_aid', label: 'Distribute Aid' },
-  { key: 'edit_records', label: 'Edit Records' },
-  { key: 'collect_payments', label: 'Collect Payments' },
-  { key: 'manage_campaigns', label: 'Manage Campaigns' },
+  { key: 'register_beneficiary', label: 'Register Beneficiary', desc: 'Add new beneficiaries to the system' },
+  { key: 'distribute_aid', label: 'Distribute Aid', desc: 'Mark aid as received by beneficiaries' },
+  { key: 'edit_records', label: 'Edit / Delete Records', desc: 'Modify or remove beneficiaries & members' },
+  { key: 'collect_payments', label: 'Collect Payments', desc: 'Record member payments & register members' },
+  { key: 'manage_campaigns', label: 'Manage Campaigns', desc: 'Create, edit, and delete campaigns' },
 ];
 
 /** Role templates: predefined permission sets */
@@ -35,7 +35,7 @@ export default function UserApproval() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
-  const [filter, setFilter] = useState('pending_approval');
+  const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
   const [editingPerms, setEditingPerms] = useState({});
@@ -56,7 +56,10 @@ export default function UserApproval() {
 
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
-      setUsers(data || []);
+      const sorted = (data || []).sort((a, b) =>
+        a.role === 'admin' ? -1 : b.role === 'admin' ? 1 : 0
+      );
+      setUsers(sorted);
     } catch (err) {
       setError('Failed to fetch users. Please try again.');
       console.error(err);
@@ -118,6 +121,15 @@ export default function UserApproval() {
     setEditingPerms({ ...ROLE_TEMPLATES[templateKey].permissions });
   };
 
+  /** Check if current editing perms match a template */
+  const getMatchingTemplate = () => {
+    for (const [key, tpl] of Object.entries(ROLE_TEMPLATES)) {
+      const match = PERMISSION_KEYS.every(p => !!editingPerms[p.key] === !!tpl.permissions[p.key]);
+      if (match) return { key, label: tpl.label };
+    }
+    return null;
+  };
+
   const savePermissions = async (userId) => {
     setPermSaving(true);
     try {
@@ -163,11 +175,11 @@ export default function UserApproval() {
       {/* Filter Tabs */}
       <div className="user-approval__filters">
         {[
+          { value: 'all', label: 'All' },
           { value: 'pending_approval', label: 'Pending' },
           { value: 'active', label: 'Active' },
           { value: 'suspended', label: 'Suspended' },
           { value: 'rejected', label: 'Rejected' },
-          { value: 'all', label: 'All' },
         ].map((f) => (
           <button
             key={f.value}
@@ -301,22 +313,40 @@ export default function UserApproval() {
             {/* Expanded Permission Editor */}
             {expandedUser === u.id && (
               <div className="user-perms">
-                <div className="user-perms__templates">
-                  <span className="user-perms__templates-label">Templates:</span>
-                  {Object.entries(ROLE_TEMPLATES).map(([key, tpl]) => (
-                    <button
-                      key={key}
-                      className="user-perms__template-btn"
-                      onClick={() => applyTemplate(key)}
-                    >
-                      {tpl.label}
-                    </button>
-                  ))}
+                <div className="user-perms__header">
+                  <span className="user-perms__title">Permissions for {u.full_name || u.email}</span>
+                  {(() => {
+                    const match = getMatchingTemplate();
+                    return match ? (
+                      <span className="user-perms__current-tpl">Currently: {match.label}</span>
+                    ) : (
+                      <span className="user-perms__current-tpl user-perms__current-tpl--custom">Custom</span>
+                    );
+                  })()}
                 </div>
+                <div className="user-perms__templates">
+                  <span className="user-perms__templates-label">Quick Apply:</span>
+                  {Object.entries(ROLE_TEMPLATES).map(([key, tpl]) => {
+                    const isActive = getMatchingTemplate()?.key === key;
+                    return (
+                      <button
+                        key={key}
+                        className={`user-perms__template-btn ${isActive ? 'user-perms__template-btn--active' : ''}`}
+                        onClick={() => applyTemplate(key)}
+                      >
+                        {tpl.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <hr className="user-perms__divider" />
                 <div className="user-perms__toggles">
                   {PERMISSION_KEYS.map(p => (
-                    <label key={p.key} className="user-perms__toggle">
-                      <span>{p.label}</span>
+                    <label key={p.key} className={`user-perms__toggle ${editingPerms[p.key] ? '' : 'user-perms__toggle--off'}`}>
+                      <div className="user-perms__toggle-info">
+                        <span className="user-perms__toggle-label">{p.label}</span>
+                        <span className="user-perms__toggle-desc">{p.desc}</span>
+                      </div>
                       <button
                         type="button"
                         className={`toggle-switch toggle-switch--sm ${editingPerms[p.key] ? 'toggle-switch--on' : ''}`}
