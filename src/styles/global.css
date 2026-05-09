@@ -152,3 +152,67 @@
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* ==========================================================
+   Light Mode — Component Polish
+   ========================================================== */
+
+/* Smooth theme transition on body */
+body {
+  transition: background-color var(--duration-normal) var(--ease-standard),
+              color var(--duration-normal) var(--ease-standard);
+}
+
+/* Light mode: cards get soft elevation instead of tonal shift */
+[data-theme="light"] .stat-card,
+[data-theme="light"] .dashboard__card,
+[data-theme="light"] .data-table__row,
+[data-theme="light"] .user-perms,
+[data-theme="light"] .modal__content {
+  box-shadow: var(--elevation-1);
+}
+
+/* Light mode: sidebar gets subtle right border */
+[data-theme="light"] .sidebar {
+  border-right: 1px solid var(--outline-ghost);
+}
+
+/* Light mode: topbar gets subtle bottom border */
+[data-theme="light"] .topbar {
+  border-bottom: 1px solid var(--outline-ghost);
+  box-shadow: var(--elevation-1);
+}
+
+/* Light mode: active sidebar link uses primary-container bg */
+[data-theme="light"] .sidebar__link--active {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* Light mode: permission banner refined */
+[data-theme="light"] .permission-banner {
+  background: linear-gradient(135deg, rgba(191, 107, 26, 0.06) 0%, rgba(191, 107, 26, 0.02) 100%);
+  border: 1px solid rgba(191, 107, 26, 0.12);
+  border-left: 3px solid rgba(191, 107, 26, 0.4);
+  color: var(--on-surface-variant);
+}
+
+[data-theme="light"] .permission-banner__icon {
+  color: rgba(191, 107, 26, 0.65);
+}
+
+/* Light mode: buttons with subtle hover shadow */
+[data-theme="light"] .btn--primary:hover {
+  box-shadow: var(--elevation-2);
+}
+
+/* Light mode: modal overlay lighter */
+[data-theme="light"] .modal__overlay {
+  background: rgba(28, 27, 31, 0.32);
+}
+
+/* Light mode: modal card gets elevation */
+[data-theme="light"] .modal__content {
+  box-shadow: var(--elevation-modal);
+  border: 1px solid var(--outline-ghost);
+}

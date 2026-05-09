@@ -298,3 +298,17 @@
     padding: var(--space-6);
   }
 }
+
+/* ── Light Mode Adjustments ── */
+[data-theme="light"] .auth-page__ambient {
+  background: radial-gradient(circle, rgba(61, 74, 92, 0.08) 0%, transparent 70%);
+}
+
+[data-theme="light"] .auth-card {
+  box-shadow: var(--elevation-2);
+  border: 1px solid var(--outline-ghost);
+}
+
+[data-theme="light"] .auth-field__input {
+  border-bottom: 1px solid var(--outline-variant);
+}

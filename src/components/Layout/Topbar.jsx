@@ -1,9 +1,18 @@
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, Bell, Search } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Menu, Bell, Search, Sun, Moon, Monitor } from 'lucide-react';
 import './Topbar.css';
+
+const THEME_META = {
+  system: { icon: Monitor, label: 'System theme' },
+  light:  { icon: Sun,     label: 'Light theme' },
+  dark:   { icon: Moon,    label: 'Dark theme' },
+};
 
 export default function Topbar({ pageTitle, onMenuClick }) {
   const { profile } = useAuth();
+  const { mode, toggleTheme } = useTheme();
+  const { icon: ThemeIcon, label: themeLabel } = THEME_META[mode];
 
   const getRoleBadgeClass = (role) => {
     switch (role) {
@@ -31,6 +40,14 @@ export default function Topbar({ pageTitle, onMenuClick }) {
         <button className="topbar__action-btn" aria-label="Search">
           <Search size={18} strokeWidth={1.5} />
         </button>
+        <button
+          className="topbar__action-btn topbar__theme-btn"
+          onClick={toggleTheme}
+          aria-label={themeLabel}
+          title={themeLabel}
+        >
+          <ThemeIcon size={18} strokeWidth={1.5} />
+        </button>
         <button className="topbar__action-btn" aria-label="Notifications">
           <Bell size={18} strokeWidth={1.5} />
           <span className="topbar__notif-dot" />
@@ -50,3 +67,4 @@ export default function Topbar({ pageTitle, onMenuClick }) {
     </header>
   );
 }
+

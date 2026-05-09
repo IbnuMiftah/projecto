@@ -134,3 +134,80 @@
   --topbar-height:      56px;
   --content-max-width:  1280px;
 }
+
+/* ==========================================================
+   Light Mode — Stitch "The Refined Advocate" Light Palette
+   Applied via [data-theme="light"] on <html>.
+   ========================================================== */
+
+[data-theme="light"] {
+  /* ── Surface Hierarchy (warm off-whites, never pure #FFF) ── */
+  --surface-base:             #F8F6F4;
+  --surface-dim:              #E8E5E3;
+  --surface-container-lowest: #FEFCFA;
+  --surface-container-low:    #F3F1EF;
+  --surface-container:        #EDEBE9;
+  --surface-container-high:   #E6E3E1;
+  --surface-container-highest:#DFDCDA;
+  --surface-bright:           #F8F6F4;
+  --surface-variant:          #E6E3E1;
+
+  /* ── Primary Palette (slate-blue, low saturation) ── */
+  --primary:                  #3D4A5C;
+  --primary-dim:              #4A5568;
+  --primary-container:        #D8E2F0;
+  --on-primary:               #FFFFFF;
+  --on-primary-container:     #2C3849;
+
+  /* ── Secondary Palette ── */
+  --secondary:                #5A6878;
+  --secondary-container:      #DCE6F2;
+  --on-secondary:             #FFFFFF;
+  --on-secondary-container:   #3A4857;
+
+  /* ── Tertiary ── */
+  --tertiary:                 #5C4D35;
+  --tertiary-container:       #E8DCC8;
+  --on-tertiary:              #FFFFFF;
+
+  /* ── Error / Status (desaturated, calm) ── */
+  --error:                    #B3261E;
+  --error-container:          #F9DEDC;
+  --on-error:                 #FFFFFF;
+  --on-error-container:       #8C1D18;
+
+  /* ── Semantic Colors (muted, trustworthy) ── */
+  --success:                  #3A7D44;
+  --success-container:        #D4EDDA;
+  --on-success:               #FFFFFF;
+  --warning:                  #BF6B1A;
+  --warning-container:        #FFF0DB;
+  --on-warning:               #FFFFFF;
+  --info:                     #2D6BA4;
+  --info-container:           #D6E8F8;
+
+  /* ── Text / Surface Content (soft black, never #000) ── */
+  --on-surface:               #1C1B1F;
+  --on-surface-variant:       #49454F;
+  --on-background:            #1C1B1F;
+  --inverse-surface:          #313033;
+  --inverse-on-surface:       #F4EFF4;
+  --inverse-primary:          #BCC7DD;
+
+  /* ── Borders (subtle, never harsh) ── */
+  --outline:                  #79747E;
+  --outline-variant:          #CAC4D0;
+  --outline-ghost:            rgba(202, 196, 208, 0.30);
+
+  /* ── Surface Tint ── */
+  --surface-tint:             #3D4A5C;
+
+  /* ── Elevation (very soft, diffused shadows) ── */
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --elevation-2: 0 2px 6px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --elevation-3: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --elevation-modal: 0 16px 48px -8px rgba(0, 0, 0, 0.15);
+
+  /* ── Scrollbar (adapt for light) ── */
+  color-scheme: light;
+}
