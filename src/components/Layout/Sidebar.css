@@ -129,6 +129,7 @@
 .sidebar__link:hover {
   background: var(--surface-container-high);
   color: var(--on-surface);
+  transform: translateX(2px);
 }
 
 .sidebar__link--active {

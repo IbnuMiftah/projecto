@@ -209,7 +209,13 @@ export default function Beneficiaries() {
 
       {/* Table */}
       {loading ? (
-        <div className="data-page__loading"><Loader2 size={20} className="animate-spin" /><span>Loading beneficiaries…</span></div>
+        <div className="data-table">
+          <div className="data-table__body">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="skeleton skeleton--row" style={{ marginBottom: 'var(--space-2)' }}>&nbsp;</div>
+            ))}
+          </div>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="data-page__empty">
           <div className="data-page__empty-icon"><Users size={28} strokeWidth={1.5} /></div>
@@ -220,7 +226,7 @@ export default function Beneficiaries() {
       ) : (
         <>
           <div className="data-table" style={{ overflowX: 'auto' }}>
-            <div className="data-table__head" style={{ gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.5fr 80px', minWidth: 600 }}>
+            <div className="data-table__head" style={{ gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.5fr 80px' }}>
               <span>Beneficiary</span>
               <span>FAYDA ID</span>
               <span>Category</span>
@@ -229,7 +235,7 @@ export default function Beneficiaries() {
             </div>
             <div className="data-table__body">
               {paginatedData.map((b) => (
-                <div className="data-table__row" key={b.id} style={{ gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.5fr 80px', minWidth: 600 }} onClick={() => openEdit(b)}>
+                <div className="data-table__row" key={b.id} style={{ gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.5fr 80px' }} onClick={() => openEdit(b)}>
                   <div className="data-table__cell data-table__cell--name">
                     <div className="data-table__avatar">{b.full_name?.charAt(0)?.toUpperCase()}</div>
                     <div className="data-table__name-text">
@@ -237,15 +243,15 @@ export default function Beneficiaries() {
                       <span className="data-table__name-secondary">{b.phone || '—'}</span>
                     </div>
                   </div>
-                  <div className="data-table__cell">
+                  <div className="data-table__cell" data-label="FAYDA ID">
                     <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-sm)', color: b.fayda_id ? 'var(--on-surface)' : 'var(--outline)' }}>
                       {b.fayda_id || '—'}
                     </span>
                   </div>
-                  <div className="data-table__cell">
+                  <div className="data-table__cell" data-label="Category">
                     <span className="category-badge" style={{ textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.03em' }}>{b.category}</span>
                   </div>
-                  <div className="data-table__cell" style={{ fontSize: 'var(--font-size-sm)', textAlign: 'center', color: 'var(--on-surface)' }}>
+                  <div className="data-table__cell" data-label="Family Size" style={{ fontSize: 'var(--font-size-sm)', color: 'var(--on-surface)' }}>
                     {String(b.household_size).padStart(2, '0')}
                   </div>
                   <div className="data-table__actions" onClick={(e) => e.stopPropagation()}>

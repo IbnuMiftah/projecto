@@ -317,7 +317,13 @@ export default function Members() {
       <div className="data-page__main-layout">
         <div className="data-page__main-content">
           {loading ? (
-            <div className="data-page__loading"><Loader2 size={20} className="animate-spin" /><span>Loading members…</span></div>
+            <div className="data-table">
+              <div className="data-table__body">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="skeleton skeleton--row" style={{ marginBottom: 'var(--space-2)' }}>&nbsp;</div>
+                ))}
+              </div>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="data-page__empty">
               <div className="data-page__empty-icon"><UsersIcon size={28} strokeWidth={1.5} /></div>
@@ -346,22 +352,22 @@ export default function Members() {
                           <span className="data-table__name-secondary">{m.email || m.phone || '—'}</span>
                         </div>
                       </div>
-                      <div className="data-table__cell">
+                      <div className="data-table__cell" data-label="FAYDA ID">
                         <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-sm)', color: m.fayda_id ? 'var(--on-surface)' : 'var(--outline)' }}>
                           {m.fayda_id || '—'}
                         </span>
                       </div>
-                      <div className="data-table__cell">
+                      <div className="data-table__cell" data-label="Plan">
                         <span className={`category-badge plan-badge--${m.membership_plan}`}>{m.membership_plan?.toUpperCase()}</span>
                       </div>
-                      <div className="data-table__cell" style={{ fontSize: 'var(--font-size-sm)' }}>
+                      <div className="data-table__cell" data-label="Last Payment" style={{ fontSize: 'var(--font-size-sm)' }}>
                         {m.last_payment_date ? (
                           <span style={{ color: m.payment_status === 'overdue' ? 'var(--error)' : 'var(--on-surface)' }}>
                             {new Date(m.last_payment_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         ) : <span style={{ color: 'var(--outline)' }}>Never</span>}
                       </div>
-                      <div className="data-table__cell">
+                      <div className="data-table__cell" data-label="Status">
                         <span className={`status-badge status-badge--${m.payment_status}`}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
                           {m.payment_status}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import BottomNav from './BottomNav';
 import './AppLayout.css';
 
 export default function AppLayout({ pageTitle }) {
@@ -35,6 +36,9 @@ export default function AppLayout({ pageTitle }) {
           <Outlet />
         </main>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
+

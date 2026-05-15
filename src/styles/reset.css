@@ -16,6 +16,7 @@ html {
   font-size: 16px;
   line-height: 1.5;
   tab-size: 4;
+  overflow-x: hidden;
 }
 
 body {
@@ -35,17 +36,20 @@ img, picture, video, canvas, svg {
 input, button, textarea, select {
   font: inherit;
   color: inherit;
+  touch-action: manipulation;
 }
 
 button {
   cursor: pointer;
   border: none;
   background: none;
+  touch-action: manipulation;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  touch-action: manipulation;
 }
 
 ul, ol {
@@ -69,4 +73,7 @@ table {
 #root {
   min-height: 100vh;
   isolation: isolate;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }

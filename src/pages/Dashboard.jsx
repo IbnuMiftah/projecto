@@ -177,7 +177,7 @@ export default function Dashboard() {
             </div>
             <div className="stat-card__content">
               <span className="stat-card__value">
-                {loadingStats ? '—' : stat.value.toLocaleString()}
+                {loadingStats ? <span className="skeleton skeleton--text" style={{ width: '48px', height: '28px', display: 'inline-block' }}>&nbsp;</span> : stat.value.toLocaleString()}
               </span>
               <span className="stat-card__label">{stat.label}</span>
             </div>

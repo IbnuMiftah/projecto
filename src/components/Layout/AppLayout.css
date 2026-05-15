@@ -47,9 +47,24 @@
   color: var(--primary);
 }
 
+/* ── Tablet ── */
+@media (max-width: 1024px) {
+  .app-layout__content {
+    padding: var(--space-5);
+  }
+}
+
+/* ── Mobile ── */
 @media (max-width: 768px) {
+  .app-layout {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .app-layout__main {
     margin-left: 0;
+    max-width: 100vw;
+    width: 100%;
   }
 
   .app-layout--collapsed .app-layout__main {
@@ -57,15 +72,19 @@
   }
 
   .app-layout__content {
-    padding: var(--space-4);
+    padding: var(--space-4) var(--space-3);
+    /* Clear the bottom nav */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--space-4));
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Sidebar hidden on mobile — bottom nav replaces it */
+  .sidebar {
+    display: none;
   }
 
   .app-layout__overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-    background: rgba(0, 0, 0, 0.5);
-    animation: fadeIn var(--duration-fast) var(--ease-enter);
+    display: none;
   }
 }

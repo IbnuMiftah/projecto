@@ -149,6 +149,16 @@
     padding: 0 var(--space-4);
   }
 
+  /* Bottom nav handles navigation — hide hamburger */
+  .topbar__menu-btn {
+    display: none;
+  }
+
+  /* Hide search + notifications on mobile (search → FAB later) */
+  .topbar__action-btn:not(.topbar__theme-btn) {
+    display: none;
+  }
+
   .topbar__user-info {
     display: none;
   }

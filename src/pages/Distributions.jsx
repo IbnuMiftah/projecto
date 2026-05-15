@@ -346,7 +346,9 @@ export default function Distributions() {
             </div>
           ) : (
             <div className="dist-campaigns-grid">
-              {campaigns.map(c => (
+              {campaigns.map(c => {
+                const count = distCounts[c.id] || 0;
+                return (
                 <div key={c.id} className={`dist-campaign-card dist-campaign-card--${c.status}`}>
                   <div className="dist-campaign-card__header">
                     <span className="dist-campaign-card__type" style={{ background: AID_COLORS[c.aid_type] + '22', color: AID_COLORS[c.aid_type] }}>
@@ -359,10 +361,18 @@ export default function Distributions() {
                   </div>
                   <h4 className="dist-campaign-card__name">{c.name}</h4>
                   {c.description && <p className="dist-campaign-card__desc">{c.description}</p>}
+                  <div className="dist-campaign-card__progress">
+                    <div className="dist-campaign-card__progress-bar">
+                      <div className="dist-campaign-card__progress-fill" style={{ width: `${Math.min(count * 2, 100)}%` }} />
+                    </div>
+                    <div className="dist-campaign-card__progress-info">
+                      <span><UserCheck size={12} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />{count} distributed</span>
+                      <span className="dist-campaign-card__progress-percent">{count > 0 ? `${Math.min(count * 2, 100)}%` : '0%'}</span>
+                    </div>
+                  </div>
                   <div className="dist-campaign-card__meta">
-                    <span>{distCounts[c.id] || 0} distributed</span>
-                    {c.start_date && <span>From {new Date(c.start_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
-                    {c.end_date && <span>To {new Date(c.end_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
+                    {c.start_date && <span><Clock size={11} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} />{new Date(c.start_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
+                    {c.end_date && <span>→ {new Date(c.end_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
                   </div>
                   <div className="dist-campaign-card__actions">
                     {c.status === 'draft' && (
@@ -391,7 +401,8 @@ export default function Distributions() {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -583,14 +594,14 @@ export default function Distributions() {
                         <div className="data-table__avatar">{d.beneficiary_name?.charAt(0)?.toUpperCase()}</div>
                         <span className="data-table__name-primary">{d.beneficiary_name}</span>
                       </div>
-                      <div className="data-table__cell">
+                      <div className="data-table__cell" data-label="FAYDA ID">
                         <span style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-sm)', color: d.beneficiary_fayda_id ? 'var(--on-surface)' : 'var(--outline)' }}>
                           {d.beneficiary_fayda_id || '—'}
                         </span>
                       </div>
-                      <div className="data-table__cell" style={{ fontSize: 'var(--font-size-sm)' }}>{campaignName(d.campaign_id)}</div>
-                      <div className="data-table__cell" style={{ fontSize: 'var(--font-size-sm)' }}>{d.distributed_by_name || '—'}</div>
-                      <div className="data-table__cell" style={{ fontSize: 'var(--font-size-sm)', color: 'var(--outline)' }}>
+                      <div className="data-table__cell" data-label="Campaign" style={{ fontSize: 'var(--font-size-sm)' }}>{campaignName(d.campaign_id)}</div>
+                      <div className="data-table__cell" data-label="Distributed By" style={{ fontSize: 'var(--font-size-sm)' }}>{d.distributed_by_name || '—'}</div>
+                      <div className="data-table__cell" data-label="Date" style={{ fontSize: 'var(--font-size-sm)', color: 'var(--outline)' }}>
                         {timeAgo(d.distributed_at)}
                       </div>
                     </div>
