@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
@@ -8,9 +9,10 @@ import {
 } from 'lucide-react';
 import '../styles/data-pages.css';
 import Pagination from '../components/Pagination';
+import { calculatePaymentStatus, sortMembers, getPeriodStart } from '../lib/paymentLogic';
 
 const PLANS = ['weekly', 'monthly', 'yearly'];
-const PAYMENT_STATUSES = ['pending', 'paid', 'overdue', 'exempt'];
+const PAYMENT_STATUSES = ['pending', 'paid', 'partial', 'overdue', 'exempt'];
 const PAGE_SIZE = 10;
 
 const EMPTY_FORM = {
@@ -57,7 +59,43 @@ export default function Members() {
       if (filter !== 'all') query = query.eq('payment_status', filter);
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
-      setMembers(data || []);
+      
+      const fetchedMembers = data || [];
+      const now = new Date();
+      const updates = [];
+      
+      const processedMembers = fetchedMembers.map(m => {
+        if (m.payment_status === 'pending' || m.payment_status === 'partial') {
+          const refDateStr = m.last_payment_date || m.join_date || m.created_at;
+          if (refDateStr) {
+            const diffDays = (now - new Date(refDateStr)) / (1000 * 60 * 60 * 24);
+            let isOverdue = false;
+            if (m.membership_plan === 'weekly' && diffDays > 7) isOverdue = true;
+            else if (m.membership_plan === 'monthly' && diffDays > 30) isOverdue = true;
+            else if (m.membership_plan === 'yearly' && diffDays > 365) isOverdue = true;
+
+            if (isOverdue) {
+              updates.push(m.id);
+              return { ...m, payment_status: 'overdue' };
+            }
+          }
+        }
+        return m;
+      });
+
+      if (updates.length > 0) {
+        // Run updates asynchronously without awaiting so UI isn't blocked
+        Promise.all(
+          updates.map(id => 
+            supabase.from('members').update({ 
+              payment_status: 'overdue', 
+              updated_at: new Date().toISOString() 
+            }).eq('id', id)
+          )
+        ).catch(err => console.error('Auto-overdue update failed:', err));
+      }
+
+      setMembers(processedMembers);
     } catch (err) {
       console.error('Fetch members error:', err);
     } finally {
@@ -82,14 +120,17 @@ export default function Members() {
 
   // Search + filter
   const filtered = useMemo(() => {
-    if (!search) return members;
-    const q = search.toLowerCase();
-    return members.filter((m) =>
-      m.full_name?.toLowerCase().includes(q) ||
-      m.fayda_id?.toLowerCase().includes(q) ||
-      m.email?.toLowerCase().includes(q) ||
-      m.phone?.includes(q)
-    );
+    let result = members;
+    if (search) {
+      const q = search.toLowerCase();
+      result = members.filter((m) =>
+        m.full_name?.toLowerCase().includes(q) ||
+        m.fayda_id?.toLowerCase().includes(q) ||
+        m.email?.toLowerCase().includes(q) ||
+        m.phone?.includes(q)
+      );
+    }
+    return sortMembers(result);
   }, [members, search]);
 
   // Stats
@@ -183,7 +224,14 @@ export default function Members() {
     setQpMember(member);
     setQpSearch(member.full_name + (member.fayda_id ? ` (${member.fayda_id})` : ''));
     setQpDropdownOpen(false);
+    if (member.payment_amount && parseFloat(member.payment_amount) > 0) {
+      setQpAmount(parseFloat(member.payment_amount).toString());
+    } else {
+      setQpAmount('');
+    }
   };
+
+
 
   const handleQuickPayment = async (e) => {
     e.preventDefault();
@@ -212,12 +260,25 @@ export default function Members() {
       return;
     }
 
-    // 2. Update member's payment status, last payment date, and amount
+    // 2. Query cumulative payments in current period
+    const periodStart = getPeriodStart(qpMember.membership_plan);
+    const { data: logs } = await supabase
+      .from('payment_logs')
+      .select('amount')
+      .eq('member_id', qpMember.id)
+      .gte('created_at', periodStart);
+
+    const totalPaid = (logs || []).reduce((sum, log) => sum + (parseFloat(log.amount) || 0), 0);
+    const expected = parseFloat(qpMember.payment_amount) || 0;
+    
+    // Determine new status based on cumulative total vs expected
+    const newStatus = calculatePaymentStatus(totalPaid, expected, qpMember.payment_status === 'overdue');
+
+    // 3. Update member's payment status and last payment date (do NOT overwrite expected payment_amount)
     const { error: updateErr } = await supabase.from('members').update({
-      payment_status: 'paid',
+      payment_status: newStatus,
       last_payment_date: qpDate,
       payment_method: qpMethod,
-      payment_amount: amountNum,
       updated_at: new Date().toISOString(),
     }).eq('id', qpMember.id);
 
@@ -228,8 +289,8 @@ export default function Members() {
       return;
     }
 
-    // 3. Success — reset form and refresh data
-    setQpSuccess(`ETB ${amountNum.toLocaleString()} collected from ${qpMember.full_name}`);
+    // 4. Success — reset form and refresh data
+    setQpSuccess(`ETB ${amountNum.toLocaleString()} collected from ${qpMember.full_name}. Total paid this period: ETB ${totalPaid.toLocaleString()}`);
     setQpMember(null);
     setQpSearch('');
     setQpAmount('');
@@ -480,6 +541,13 @@ export default function Members() {
                     </div>
                   </div>
                 ))}
+                {profile?.role === 'admin' && recentLogs.length > 0 && (
+                  <div style={{ padding: 'var(--space-3) 0', textAlign: 'center', marginTop: 'var(--space-2)' }}>
+                    <Link to="/admin/audit" style={{ color: 'var(--primary)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', textDecoration: 'none' }}>
+                      View All Payments →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

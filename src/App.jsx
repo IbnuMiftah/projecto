@@ -13,6 +13,8 @@ import Distributions from './pages/Distributions';
 import UserApproval from './pages/admin/UserApproval';
 import AuditLogs from './pages/admin/AuditLogs';
 import SystemSettings from './pages/admin/SystemSettings';
+import Settings from './pages/Settings';
+import Support from './pages/Support';
 
 export default function App() {
   return (
@@ -40,8 +42,8 @@ export default function App() {
             <Route path="/distributions" element={<Distributions />} />
 
             {/* Utility routes */}
-            <Route path="/settings" element={<PlaceholderPage title="Settings" desc="System preferences and configuration." />} />
-            <Route path="/help" element={<PlaceholderPage title="Support" desc="Documentation and support resources." />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<Support />} />
 
             {/* Admin routes — require admin role */}
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserApproval /></ProtectedRoute>} />

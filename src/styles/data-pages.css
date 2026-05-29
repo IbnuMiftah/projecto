@@ -6,7 +6,6 @@
 .data-page {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  overflow-x: hidden;
 }
 
 .data-page__header {
@@ -993,6 +992,7 @@
   /* ── Distribution tabs scrollable ── */
   .data-page__tabs {
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap;
     gap: 0;
@@ -1023,13 +1023,21 @@
   /* ── Distribution workflow ── */
   .dist-step {
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .dist-step__number {
-    width: 28px;
-    height: 28px;
-    font-size: var(--font-size-xs);
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-sm);
+  }
+
+  /* Make inputs/selects in the distribute workflow larger for mobile touch */
+  .dist-step__content .modal__select,
+  .dist-step__content .data-page__search-input,
+  .dist-step__content .quick-payment__input {
+    min-height: 48px;
+    font-size: var(--font-size-base);
   }
 
   /* ── Beneficiary card stacking ── */

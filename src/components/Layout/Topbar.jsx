@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Menu, Bell, Search, Sun, Moon, Monitor } from 'lucide-react';
+import { Menu, Search, Sun, Moon, Monitor } from 'lucide-react';
 import './Topbar.css';
 
 const THEME_META = {
@@ -48,10 +48,7 @@ export default function Topbar({ pageTitle, onMenuClick }) {
         >
           <ThemeIcon size={18} strokeWidth={1.5} />
         </button>
-        <button className="topbar__action-btn" aria-label="Notifications">
-          <Bell size={18} strokeWidth={1.5} />
-          <span className="topbar__notif-dot" />
-        </button>
+
         <div className="topbar__user">
           <div className="topbar__avatar">
             {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}

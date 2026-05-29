@@ -65,6 +65,7 @@ export default function Distributions() {
 
   /* ── Distribute state ── */
   const [selectedCampaign, setSelectedCampaign] = useState('');
+  const [campaignDropdownOpen, setCampaignDropdownOpen] = useState(false);
   const [benefSearch, setBenefSearch] = useState('');
   const [benefResults, setBenefResults] = useState([]);
   const [searchingBenef, setSearchingBenef] = useState(false);
@@ -91,7 +92,29 @@ export default function Distributions() {
       .from('campaigns')
       .select('*')
       .order('created_at', { ascending: false });
-    if (!error) setCampaigns(data || []);
+    if (!error) {
+      const today = new Date().toISOString().split('T')[0];
+      const expired = (data || []).filter(c =>
+        ['active', 'paused'].includes(c.status) && c.end_date && c.end_date < today
+      );
+      // Auto-complete expired campaigns
+      if (expired.length > 0) {
+        await Promise.all(
+          expired.map(c =>
+            supabase.from('campaigns').update({
+              status: 'completed', updated_at: new Date().toISOString(),
+            }).eq('id', c.id)
+          )
+        );
+        // Update local data to reflect changes
+        const updated = (data || []).map(c =>
+          expired.some(e => e.id === c.id) ? { ...c, status: 'completed' } : c
+        );
+        setCampaigns(updated);
+      } else {
+        setCampaigns(data || []);
+      }
+    }
     setLoadingCampaigns(false);
   }, []);
 
@@ -200,14 +223,21 @@ export default function Distributions() {
     let cancelled = false;
     const doSearch = async () => {
       setSearchingBenef(true);
-      const q = `%${debouncedBenefSearch}%`;
-      const { data } = await supabase
-        .from('beneficiaries')
-        .select('*')
-        .or(`full_name.ilike.${q},fayda_id.ilike.${q},phone.ilike.${q}`)
-        .limit(10);
+      const q = `%${debouncedBenefSearch.trim()}%`;
+      // Three parallel ilike queries — avoids unreliable .or() PostgREST filter
+      const [nameRes, faydaRes, phoneRes] = await Promise.all([
+        supabase.from('beneficiaries').select('*').ilike('full_name', q).limit(10),
+        supabase.from('beneficiaries').select('*').ilike('fayda_id', q).limit(5),
+        supabase.from('beneficiaries').select('*').ilike('phone', q).limit(5),
+      ]);
       if (!cancelled) {
-        setBenefResults(data || []);
+        // Merge and deduplicate by id
+        const seen = new Set();
+        const merged = [];
+        for (const row of [...(nameRes.data || []), ...(faydaRes.data || []), ...(phoneRes.data || [])]) {
+          if (!seen.has(row.id)) { seen.add(row.id); merged.push(row); }
+        }
+        setBenefResults(merged.slice(0, 10));
         setSearchingBenef(false);
       }
     };
@@ -336,7 +366,19 @@ export default function Distributions() {
       {tab === 'campaigns' && (
         <div style={{ marginTop: 'var(--space-6)' }}>
           {loadingCampaigns ? (
-            <div className="data-page__loading"><Loader2 size={20} className="animate-spin" /><span>Loading campaigns…</span></div>
+            <div className="dist-campaigns-grid">
+              {[1,2,3].map(i => (
+                <div key={i} className="dist-campaign-card" style={{ pointerEvents: 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div className="skeleton skeleton--text" style={{ width: 60, height: 18 }}>&nbsp;</div>
+                    <div className="skeleton skeleton--text" style={{ width: 50, height: 18 }}>&nbsp;</div>
+                  </div>
+                  <div className="skeleton skeleton--text" style={{ width: '70%', height: 16 }}>&nbsp;</div>
+                  <div className="skeleton skeleton--text" style={{ width: '100%', height: 6, borderRadius: 99 }}>&nbsp;</div>
+                  <div className="skeleton skeleton--text" style={{ width: '40%', height: 12 }}>&nbsp;</div>
+                </div>
+              ))}
+            </div>
           ) : campaigns.length === 0 ? (
             <div className="data-page__empty">
               <div className="data-page__empty-icon"><Package size={28} strokeWidth={1.5} /></div>
@@ -374,6 +416,7 @@ export default function Distributions() {
                     {c.start_date && <span><Clock size={11} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} />{new Date(c.start_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
                     {c.end_date && <span>→ {new Date(c.end_date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}</span>}
                   </div>
+                  {canManageCampaigns && (
                   <div className="dist-campaign-card__actions">
                     {c.status === 'draft' && (
                       <button className="btn btn--sm btn--primary" onClick={() => changeCampaignStatus(c.id, 'active')}>
@@ -395,11 +438,12 @@ export default function Distributions() {
                         <Play size={13} /> Resume
                       </button>
                     )}
-                    {canManageCampaigns && <button className="btn btn--sm btn--ghost" onClick={() => openEditCampaign(c)}><Pencil size={13} /></button>}
-                    {c.status === 'draft' && canManageCampaigns && (
+                    <button className="btn btn--sm btn--ghost" onClick={() => openEditCampaign(c)}><Pencil size={13} /></button>
+                    {c.status === 'draft' && (
                       <button className="btn btn--sm btn--danger" onClick={() => deleteCampaign(c.id)}><Trash2 size={13} /></button>
                     )}
                   </div>
+                  )}
                 </div>
                 );
               })}
@@ -423,18 +467,54 @@ export default function Distributions() {
               {/* Step 1: Select Campaign */}
               <div className="dist-step">
                 <div className="dist-step__number">1</div>
-                <div className="dist-step__content">
+                <div className="dist-step__content" style={{ position: 'relative' }}>
                   <label className="dist-step__label">Select Active Campaign</label>
-                  <select
-                    className="modal__select"
-                    value={selectedCampaign}
-                    onChange={e => { setSelectedCampaign(e.target.value); setSelectedBenef(null); setDistResult(null); setBenefSearch(''); }}
+                  
+                  <div 
+                    className="modal__select" 
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                    onClick={() => setCampaignDropdownOpen(!campaignDropdownOpen)}
                   >
-                    <option value="">Choose a campaign…</option>
-                    {activeCampaigns.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.aid_type}) — {distCounts[c.id] || 0} distributed</option>
-                    ))}
-                  </select>
+                    <span style={{ color: selectedCampaign ? 'var(--on-surface)' : 'var(--outline)' }}>
+                      {selectedCampaign ? (() => {
+                        const c = campaigns.find(x => x.id === selectedCampaign);
+                        return c ? `${c.name} (${c.aid_type})` : 'Choose a campaign…';
+                      })() : 'Choose a campaign…'}
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--outline)' }}>▼</span>
+                  </div>
+                  
+                  {campaignDropdownOpen && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setCampaignDropdownOpen(false)} />
+                      <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 50, maxHeight: 240, overflowY: 'auto', background: 'var(--surface-container-high)', borderRadius: 'var(--radius-md)', marginTop: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}>
+                        {activeCampaigns.map(c => (
+                          <div key={c.id} 
+                            onClick={() => { 
+                              setSelectedCampaign(c.id); 
+                              setSelectedBenef(null); 
+                              setDistResult(null); 
+                              setBenefSearch(''); 
+                              setCampaignDropdownOpen(false); 
+                            }}
+                            style={{ padding: 'var(--space-3) var(--space-4)', cursor: 'pointer', borderBottom: '1px solid var(--outline-ghost)', transition: 'background 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-container-highest)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <div style={{ fontWeight: 500, color: 'var(--on-surface)' }}>{c.name}</div>
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--outline)', fontFamily: 'monospace' }}>
+                              Type: {c.aid_type.charAt(0).toUpperCase() + c.aid_type.slice(1)} · Distributed: {distCounts[c.id] || 0}
+                            </div>
+                          </div>
+                        ))}
+                        {activeCampaigns.length === 0 && (
+                          <div style={{ padding: 'var(--space-3) var(--space-4)', color: 'var(--outline)', fontSize: 'var(--font-size-sm)' }}>
+                            No active campaigns available.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -454,8 +534,8 @@ export default function Distributions() {
                       />
                     </div>
                     {searchingBenef && (
-                      <div style={{ padding: 'var(--space-3)', fontSize: 'var(--font-size-sm)', color: 'var(--outline)' }}>
-                        <Loader2 size={14} className="animate-spin" style={{ display: 'inline', marginRight: 6 }} />Searching…
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', padding: 'var(--space-3) 0' }}>
+                        {[1,2].map(i => <div key={i} className="skeleton skeleton--row" style={{ height: 40 }}>&nbsp;</div>)}
                       </div>
                     )}
                     {benefResults.length > 0 && !selectedBenef && (
@@ -570,7 +650,9 @@ export default function Distributions() {
           </div>
 
           {loadingHistory ? (
-            <div className="data-page__loading"><Loader2 size={20} className="animate-spin" /><span>Loading history…</span></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', padding: 'var(--space-4) 0' }}>
+              {[1,2,3,4,5].map(i => <div key={i} className="skeleton skeleton--row" style={{ height: 48 }}>&nbsp;</div>)}
+            </div>
           ) : history.length === 0 ? (
             <div className="data-page__empty">
               <div className="data-page__empty-icon"><Clock size={28} strokeWidth={1.5} /></div>

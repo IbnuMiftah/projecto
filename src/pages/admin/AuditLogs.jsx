@@ -167,7 +167,9 @@ export default function AuditLogs() {
 
       {/* Table */}
       {loading ? (
-        <div className="data-page__loading"><Loader2 size={20} className="animate-spin" /><span>Loading logs…</span></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', padding: 'var(--space-4) 0' }}>
+          {[1,2,3,4,5].map(i => <div key={i} className="skeleton skeleton--row" style={{ height: 48 }}>&nbsp;</div>)}
+        </div>
       ) : logs.length === 0 ? (
         <div className="data-page__empty">
           <div className="data-page__empty-icon"><Clock size={28} strokeWidth={1.5} /></div>

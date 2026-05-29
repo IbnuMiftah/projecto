@@ -61,8 +61,7 @@ export default function Signup() {
             </div>
             <h2 className="auth-card__title">Registration Submitted</h2>
             <p className="auth-card__subtitle">
-              Your credentials have been submitted. An administrator must
-              verify your account before access is granted.
+              Your account has been created. Please check your email and wait for admin approval.
             </p>
             <Link to="/login" className="auth-card__submit" style={{ textAlign: 'center', display: 'block' }}>
               Back to Sign In
@@ -83,6 +82,9 @@ export default function Signup() {
             <Shield size={28} strokeWidth={1.5} />
           </div>
           <h1 className="auth-card__title">Request Access</h1>
+          <p className="auth-card__subtitle" style={{ fontSize: 'var(--font-size-xs)', letterSpacing: '0.04em', color: 'var(--outline)', marginBottom: 'var(--space-2)' }}>
+            Automated Membership And Networked Aid Hub
+          </p>
           <p className="auth-card__subtitle">
             Submit your details to register for the A.M.A.N.A.H system.
             Admin approval is required.

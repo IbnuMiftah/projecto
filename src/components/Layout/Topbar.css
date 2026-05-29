@@ -74,15 +74,6 @@
   color: var(--on-surface);
 }
 
-.topbar__notif-dot {
-  position: absolute;
-  top: 8px;
-  right: 9px;
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--error);
-}
 
 .topbar__user {
   display: flex;

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { timeAgo } from '../lib/utils';
 import {
   Users, Truck, UserPlus, AlertTriangle, Activity,
-  TrendingUp, TrendingDown, Clock, Shield,
-  ToggleLeft, ToggleRight, CreditCard, Package,
+  TrendingUp, TrendingDown, Clock,
+  CreditCard, Package,
 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -26,13 +27,6 @@ export default function Dashboard() {
 
   /* ── Campaign progress ── */
   const [campaignProgress, setCampaignProgress] = useState([]);
-
-  /* ── Toggles (local state for now) ── */
-  const [toggles, setToggles] = useState({
-    'beneficiary-reg': true,
-    'distribution-marking': true,
-    'mobile-access': false,
-  });
 
   /* ── Cache ref ── */
   const cacheRef = useRef({ ts: 0 });
@@ -93,7 +87,7 @@ export default function Dashboard() {
         time: p.created_at,
         type: 'info',
       })),
-    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5);
 
     setRecentActivity(merged);
     setLoadingStats(false);
@@ -131,21 +125,11 @@ export default function Dashboard() {
 
 
 
-  const toggleSwitch = (id) => {
-    setToggles(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const STAT_CARDS = [
     { label: 'Total Beneficiaries', value: stats.beneficiaries, icon: Users, trend: 'up', sub: 'Registered in system' },
     { label: 'Active Campaigns', value: stats.activeCampaigns, icon: Truck, trend: 'neutral', sub: 'Currently distributing' },
     { label: 'Members', value: stats.members, icon: UserPlus, trend: 'up', sub: 'Registered members' },
     { label: 'Overdue Payments', value: stats.overdue, icon: AlertTriangle, trend: stats.overdue > 0 ? 'warning' : 'up', sub: stats.overdue > 0 ? 'Require follow-up' : 'All clear' },
-  ];
-
-  const FRAUD_TOGGLES = [
-    { id: 'beneficiary-reg', label: 'Beneficiary Registration', description: 'Prevent new entries during audits' },
-    { id: 'distribution-marking', label: 'Distribution Marking', description: 'Lock distribution status globally' },
-    { id: 'mobile-access', label: 'Mobile Agent Access', description: 'Force agent logouts on suspect activity' },
   ];
 
   return (
@@ -157,7 +141,7 @@ export default function Dashboard() {
             Welcome back, {profile?.full_name?.split(' ')[0] || 'User'}
           </h2>
           <p className="dashboard__subheading">
-            Operational overview for A.M.A.N.A.H distribution network.
+            Operational overview for A.M.A.N.A.H — Automated Membership And Networked Aid Hub.
           </p>
         </div>
         {stats.overdue > 0 && profile?.role === 'admin' && (
@@ -236,32 +220,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Fraud Prevention — Admin only */}
-        {profile?.role === 'admin' && (
-          <div className="dashboard__panel">
-            <div className="dashboard__panel-header">
-              <Shield size={18} strokeWidth={1.5} />
-              <h3>Fraud Prevention Toggles</h3>
-            </div>
-            <div className="dashboard__toggles">
-              {FRAUD_TOGGLES.map((toggle) => (
-                <div className="toggle-row" key={toggle.id}>
-                  <div className="toggle-row__info">
-                    <span className="toggle-row__label">{toggle.label}</span>
-                    <span className="toggle-row__desc">{toggle.description}</span>
-                  </div>
-                  <button className="toggle-row__switch" aria-label={`Toggle ${toggle.label}`} onClick={() => toggleSwitch(toggle.id)}>
-                    {toggles[toggle.id] ? (
-                      <ToggleRight size={28} className="toggle-row__on" />
-                    ) : (
-                      <ToggleLeft size={28} className="toggle-row__off" />
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Activity Feed */}
         <div className="dashboard__panel">
@@ -284,6 +242,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
+            )}
+            {profile?.role === 'admin' && recentActivity.length > 0 && (
+              <div style={{ padding: 'var(--space-3) var(--space-6)', borderTop: '1px solid var(--outline-ghost)', textAlign: 'center' }}>
+                <Link to="/admin/audit" style={{ color: 'var(--primary)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', textDecoration: 'none' }}>
+                  View More Activity →
+                </Link>
+              </div>
             )}
           </div>
         </div>

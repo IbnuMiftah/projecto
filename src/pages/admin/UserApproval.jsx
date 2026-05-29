@@ -200,9 +200,10 @@ export default function UserApproval() {
 
       {/* User List */}
       {loading ? (
-        <div className="user-approval__loading">
-          <Loader2 size={24} className="animate-spin" />
-          <span>Loading users…</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', padding: 'var(--space-4) 0' }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} className="skeleton skeleton--row" style={{ height: 72 }}>&nbsp;</div>
+          ))}
         </div>
       ) : users.length === 0 ? (
         <div className="user-approval__empty">

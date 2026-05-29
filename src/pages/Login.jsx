@@ -39,6 +39,9 @@ export default function Login() {
             <Shield size={28} strokeWidth={1.5} />
           </div>
           <h1 className="auth-card__title">A.M.A.N.A.H</h1>
+          <p className="auth-card__subtitle" style={{ fontSize: 'var(--font-size-xs)', letterSpacing: '0.04em', color: 'var(--outline)', marginBottom: 'var(--space-2)' }}>
+            Automated Membership And Networked Aid Hub
+          </p>
           <p className="auth-card__subtitle">
             Enter your credentials to access the system.
           </p>

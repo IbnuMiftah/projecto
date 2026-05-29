@@ -77,7 +77,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         {!collapsed && (
           <div className="sidebar__brand-text">
             <span className="sidebar__brand-name">A.M.A.N.A.H</span>
-            <span className="sidebar__brand-tagline">Networked Aid Hub</span>
+            <span className="sidebar__brand-tagline">Automated Membership And Networked Aid Hub</span>
           </div>
         )}
         <button

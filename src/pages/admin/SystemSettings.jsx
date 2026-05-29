@@ -108,9 +108,10 @@ export default function SystemSettings() {
   if (loading) {
     return (
       <div className="system-settings">
-        <div className="system-settings__loading">
-          <Loader2 size={24} className="animate-spin" />
-          <span>Loading settings…</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', padding: 'var(--space-6) 0' }}>
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="skeleton skeleton--row" style={{ height: 56 }}>&nbsp;</div>
+          ))}
         </div>
       </div>
     );
